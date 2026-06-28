@@ -11,8 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Review with Groq
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Run Groq Review
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          python review.py
+        run: python review.py
