@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.Opsfusionn.StreamForge.dto.UploadResponse;
+import com.Opsfusionn.StreamForge.model.Video;
 import com.Opsfusionn.StreamForge.service.FileStorageService;
 @RestController
 @RequestMapping("/api/files")
@@ -23,8 +24,10 @@ public class FileUploadController{
 
         @PostMapping("/upload")
         public ResponseEntity<UploadResponse> uploadFile(@RequestParam MultipartFile file) throws IOException{
-                String storedFileName = fileStorageService.storeFile(file);
-                UploadResponse response = new UploadResponse(storedFileName, "Video uploaded successfully.");
+                Video video = fileStorageService.storeFile(file);
+                UploadResponse response = new UploadResponse(video.getStoredFileName(), "Video uploaded successfully.", video.getId());
                 return ResponseEntity.ok(response);
         }
+
 }
+

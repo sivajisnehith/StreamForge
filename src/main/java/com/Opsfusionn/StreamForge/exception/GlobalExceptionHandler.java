@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.Opsfusionn.StreamForge.dto.ErrorResponse;
 
@@ -13,7 +14,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex){
-                ErrorResponse errorResponse = new ErrorResponse(400, ex.getMessage());
+                 ErrorResponse errorResponse = new ErrorResponse(400, ex.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "Invalid parameter format.";
+        if (ex.getRequiredType() != null && ex.getRequiredType().equals(java.util.UUID.class)) {
+            message = "Invalid video ID format.";
+        }
+        ErrorResponse errorResponse = new ErrorResponse(400, message);
         return ResponseEntity
                 .badRequest()
                 .body(errorResponse);
@@ -35,6 +48,14 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(500, ex.getMessage());
         return ResponseEntity
                 .badRequest()
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(VideoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleVideoNotFound(VideoNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(404, ex.getMessage());
+        return ResponseEntity
+                .status(org.springframework.http.HttpStatus.NOT_FOUND)
                 .body(errorResponse);
     }
 }
