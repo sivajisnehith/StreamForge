@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Fetches enough history to get a diff
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,29 +28,45 @@ jobs:
       - name: Get PR Diff
         id: get_diff
         run: |
-          # Get the diff between the PR branch and target branch
           git diff HEAD^ HEAD > diff.txt
-          # Safely read diff into environment variable
           echo "PR_DIFF<<EOF" >> $GITHUB_ENV
           cat diff.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Run Groq Review Script
         id: groq_review
-        continue-on-error: true # Prevents the workflow from stopping instantly on failure
+        continue-on-error: true
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python review_pr.py
 
-      - name: Post Comment to PR
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-path: pr_review.md
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Review File Exists
+        id: check_file
+        run: |
+          if [ -s "pr_review.md" ]; then
+            echo "file_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "file_exists=false" >> $GITHUB_OUTPUT
+            echo "Error: pr_review.md is empty or does not exist. The Python script might have crashed."
+          fi
 
-      - name: Close PR if Critical Errors Found
-        # This step runs ONLY if the python script exited with code 1
-        if: steps.groq_review.outcome == 'failure'
-        run: gh pr close ${{ github.event.pull_request.number }} -c "Closing automatically due to critical errors detected during AI review."
+      - name: Post Comment to PR
+        # Using a modern, fully up-to-date action to avoid Node 20 deprecation warnings
+        if: steps.check_file.outputs.file_exists == 'true'
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: pr_review.md
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Handle Script Failure or Critical Errors
+        # Close if the python script returned exit code 1 OR if it crashed completely without writing a file
+        if: steps.groq_review.outcome == 'failure' || steps.check_file.outputs.file_exists == 'false'
+        run: |
+          if [ "${{ steps.check_file.outputs.file_exists }}" = "false" ]; then
+            REASON="The AI code review workflow encountered an internal error or failed to connect to the model."
+          else
+            REASON="Closing automatically due to critical errors detected during AI review."
+          fi
+          gh pr close ${{ github.event.pull_request.number }} -c "$REASON"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
