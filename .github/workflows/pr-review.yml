@@ -1,24 +1,56 @@
-name: AI Review
+name: AI PR Reviewer
 
 on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   review:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          python-version: "3.12"
+          fetch-depth: 2 # Fetches enough history to get a diff
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run Groq Review
+      - name: Get PR Diff
+        id: get_diff
+        run: |
+          # Get the diff between the PR branch and target branch
+          git diff HEAD^ HEAD > diff.txt
+          # Safely read diff into environment variable
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          cat diff.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run Groq Review Script
+        id: groq_review
+        continue-on-error: true # Prevents the workflow from stopping instantly on failure
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: python review.py
+        run: python review_pr.py
+
+      - name: Post Comment to PR
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: pr_review.md
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Close PR if Critical Errors Found
+        # This step runs ONLY if the python script exited with code 1
+        if: steps.groq_review.outcome == 'failure'
+        run: gh pr close ${{ github.event.pull_request.number }} -c "Closing automatically due to critical errors detected during AI review."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
