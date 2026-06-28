@@ -1,7 +1,7 @@
 import os
 import requests
 
-api_key = os.getenv("GROQ_API_KEY")
+api_key = os.environ["GROQ_API_KEY"]
 
 headers = {
     "Authorization": f"Bearer {api_key}",
@@ -13,7 +13,7 @@ payload = {
     "messages": [
         {
             "role": "user",
-            "content": "Say Hello from Groq."
+            "content": "Say 'GitHub Actions successfully connected to Groq!'"
         }
     ]
 }
@@ -24,4 +24,4 @@ response = requests.post(
     json=payload
 )
 
-print(response.text)
+print(response.json()["choices"][0]["message"]["content"])
