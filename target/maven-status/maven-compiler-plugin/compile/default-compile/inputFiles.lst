@@ -1,6 +1,7 @@
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\FileUploadController.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\VideoController.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ErrorResponse.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\UpdateVideoStatusRequest.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\UploadResponse.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\VideoResponse.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\exception\GlobalExceptionHandler.java

@@ -16,7 +16,8 @@
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
-    import com.Opsfusionn.StreamForge.dto.VideoResponse;
+import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
+import com.Opsfusionn.StreamForge.dto.VideoResponse;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
@@ -127,7 +128,7 @@
             video.setStoredFileName(storedFileName);
             video.setFileSize(file.getSize());
             video.setContentType(contentType);
-            video.setStatus(VideoStatus.PENDING);
+            video.setStatus(VideoStatus.UPLOADED);
 
             
 
@@ -186,4 +187,30 @@
             Files.deleteIfExists(filePath);
             videoRepository.delete(video);
         }
+
+        //Method to update the status
+        public void updateVideoStatus(UUID videoId,UpdateVideoStatusRequest request) {
+            Optional<Video> videoOptional = videoRepository.findById(videoId);
+
+            if (videoOptional.isEmpty()) {
+                throw new VideoNotFoundException("Video not found.");
+            }
+
+            Video video = videoOptional.get();
+
+            //check for state machine architecture
+            if (!video.getStatus().canTransitionTo(request.getStatus())) {
+                throw new IllegalStateException(
+                    "Cannot change video status from " +
+                    video.getStatus() +
+                    " to " +
+                    request.getStatus()
+                );
+            }
+
+            video.setStatus(request.getStatus());
+
+            videoRepository.save(video);
+        }
+
     }
