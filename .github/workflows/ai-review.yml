@@ -7,6 +7,7 @@ on:
 permissions:
   pull-requests: write
   contents: read
+  issues: write
 
 jobs:
   review:
@@ -16,6 +17,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetches full history so git diff can compare branches reliably
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -38,7 +46,12 @@ jobs:
         id: groq_review
         continue-on-error: true
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
         run: python review_pr.py
 
       - name: Verify Review File Exists
@@ -59,33 +72,13 @@ jobs:
         with:
           file-path: pr_review.md
 
-      - name: Send Email Notification on Failure
-        if: steps.groq_review.outcome == 'failure' || steps.check_file.outputs.file_exists == 'false'
-        uses: dawidd6/action-send-mail@v4
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "⚠️ Critical Error Detected in PR #${{ github.event.pull_request.number }}"
-          to: ${{ secrets.NOTIFICATION_EMAIL }}
-          from: "GitHub AI Reviewer"
-          body: |
-            An issue was detected in Pull Request #${{ github.event.pull_request.number }} ("${{ github.event.pull_request.title }}").
-            
-            The AI code review flagged critical errors or the runner ran into an unexpected issue. The pull request has been automatically closed.
-            
-            You can review the full log and comments directly on the PR here:
-            ${{ github.event.pull_request.html_url }}
-          convert_markdown: true
-
       - name: Close PR if Critical Errors Found
         if: steps.groq_review.outcome == 'failure' || steps.check_file.outputs.file_exists == 'false'
         run: |
           if [ "${{ steps.check_file.outputs.file_exists }}" = "false" ]; then
             REASON="The AI code review workflow encountered an internal error or failed to generate a report."
           else
-            REASON="Closing automatically due to critical errors detected during AI review."
+            REASON="Closing automatically due to compilation failure or critical errors detected during AI review."
           fi
           gh pr close ${{ github.event.pull_request.number }} -c "$REASON"
         env:
