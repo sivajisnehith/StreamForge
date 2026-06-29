@@ -109,6 +109,7 @@
             logger.info("Original file: {}", originalFileName);
             logger.info("Stored file: {}", storedFileName);
             
+            //we are using paths.get to basically use the correct / because of different os
             Path filePath = Paths.get(uploadDir, storedFileName);
             try {
                 Files.write(filePath, file.getBytes());
@@ -134,7 +135,7 @@
             return video;
         }
 
-        //private helper method to actualy mapt to videos
+        //private helper method to actualy map to videos
         private VideoResponse mapToVideoResponse(Video video){
             VideoResponse response = new VideoResponse();
 
@@ -149,7 +150,7 @@
         }
 
 
-        //This is for ("/api/vidoes/{id}")
+        //This is for (GET "/api/vidoes/{id}")
         public VideoResponse getVideoById(UUID videoId){
             Optional<Video> videoOptional = videoRepository.findById(videoId);
             if (videoOptional.isEmpty()) {
@@ -160,7 +161,7 @@
             return mapToVideoResponse(video);   
         }
 
-        //This is for ("/api/videos")
+        //This is for (GET "/api/videos")
         public List<VideoResponse> getAllVideos(){
             List<Video> videos = videoRepository.findAll();
             List<VideoResponse> responses = new ArrayList<>();
@@ -168,5 +169,21 @@
                 responses.add(mapToVideoResponse(video));
             }
             return responses;
+        }
+
+
+        //This is for (DELETE "/api/videos/{id}")
+        public void deleteVideo(UUID videoId) throws IOException {
+            Optional<Video> videoOptional = videoRepository.findById(videoId);
+
+            if (videoOptional.isEmpty()) {
+                throw new VideoNotFoundException("Video not found.");
+            }
+
+            //reconstructing the videopath
+            Video video = videoOptional.get();
+            Path filePath = Paths.get(uploadDir, video.getStoredFileName());
+            Files.deleteIfExists(filePath);
+            videoRepository.delete(video);
         }
     }
