@@ -1,0 +1,8 @@
+com\Opsfusionn\StreamForge\StreamForgeApplication.class
+com\Opsfusionn\StreamForge\model\VideoStatus.class
+com\Opsfusionn\StreamForge\exception\GlobalExceptionHandler.class
+com\Opsfusionn\StreamForge\hello.class
+com\Opsfusionn\StreamForge\dto\UploadResponse.class
+com\Opsfusionn\StreamForge\model\Video.class
+com\Opsfusionn\StreamForge\dto\ErrorResponse.class
+com\Opsfusionn\StreamForge\repository\VideoRepository.class

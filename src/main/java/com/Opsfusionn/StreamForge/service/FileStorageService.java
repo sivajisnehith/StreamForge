@@ -1,10 +1,10 @@
     package com.Opsfusionn.StreamForge.service;
-
     import java.io.File;
     import java.io.IOException;
     import java.nio.file.Files;
     import java.nio.file.Path;
     import java.nio.file.Paths;
+import java.util.Optional;
     import java.util.Set;
     import java.util.UUID;
 
@@ -14,10 +14,21 @@
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
+    import com.Opsfusionn.StreamForge.dto.VideoResponse;
+    import com.Opsfusionn.StreamForge.model.Video;
+    import com.Opsfusionn.StreamForge.model.VideoStatus;
+    import com.Opsfusionn.StreamForge.repository.VideoRepository;
+    import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
 
+    
     @Service
     public class FileStorageService {
         private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
+        private final VideoRepository videoRepository;
+
+        public FileStorageService(VideoRepository videoRepository) {
+            this.videoRepository = videoRepository;
+        }
 
         @Value("${streamforge.storage.max-file-size}")
         private long MAX_FILE_SIZE;
@@ -36,7 +47,7 @@
         private String uploadDir;
 
 
-        public String storeFile(MultipartFile file) throws IOException{
+        public Video storeFile(MultipartFile file) throws IOException{
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file is empty.");
             }
@@ -88,9 +99,11 @@
                 throw new IllegalArgumentException(
                         "Unsupported extension.");
             }
+            //video id
+            UUID videoId = UUID.randomUUID();
 
             //storedfilename
-            String storedFileName = UUID.randomUUID().toString() + extension;
+            String storedFileName = videoId.toString() + extension;
             logger.info("Original file: {}", originalFileName);
             logger.info("Stored file: {}", storedFileName);
             
@@ -104,6 +117,36 @@
                         ex
                 );
             }
-            return storedFileName;
+
+            Video video = new Video();
+            video.setId(videoId);
+            video.setOriginalFileName(originalFileName);
+            video.setStoredFileName(storedFileName);
+            video.setFileSize(file.getSize());
+            video.setContentType(contentType);
+            video.setStatus(VideoStatus.PENDING);
+
+            
+
+            videoRepository.save(video);
+            return video;
+        }
+
+        
+        public VideoResponse getVideoById(UUID videoId){
+            Optional<Video> videoOptional = videoRepository.findById(videoId);
+            if (videoOptional.isEmpty()) {
+                throw new VideoNotFoundException("Video not found.");
+            }
+
+            Video video = videoOptional.get();
+            VideoResponse response = new VideoResponse();
+            response.setVideoId(video.getId());
+            response.setOriginalFileName(video.getOriginalFileName());
+            response.setFileSize(video.getFileSize());
+            response.setContentType(video.getContentType());
+            response.setStatus(video.getStatus());
+            response.setUploadedAt(video.getUploadedAt());
+            return response;   
         }
     }
