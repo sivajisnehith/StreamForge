@@ -4,7 +4,9 @@
     import java.nio.file.Files;
     import java.nio.file.Path;
     import java.nio.file.Paths;
-import java.util.Optional;
+    import java.util.ArrayList;
+    import java.util.List;
+    import java.util.Optional;
     import java.util.Set;
     import java.util.UUID;
 
@@ -15,10 +17,10 @@ import java.util.Optional;
     import org.springframework.web.multipart.MultipartFile;
 
     import com.Opsfusionn.StreamForge.dto.VideoResponse;
+    import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
-    import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
 
     
     @Service
@@ -107,6 +109,7 @@ import java.util.Optional;
             logger.info("Original file: {}", originalFileName);
             logger.info("Stored file: {}", storedFileName);
             
+            //we are using paths.get to basically use the correct / because of different os
             Path filePath = Paths.get(uploadDir, storedFileName);
             try {
                 Files.write(filePath, file.getBytes());
@@ -132,7 +135,22 @@ import java.util.Optional;
             return video;
         }
 
-        
+        //private helper method to actualy map to videos
+        private VideoResponse mapToVideoResponse(Video video){
+            VideoResponse response = new VideoResponse();
+
+            response.setVideoId(video.getId());
+            response.setOriginalFileName(video.getOriginalFileName());
+            response.setFileSize(video.getFileSize());
+            response.setContentType(video.getContentType());
+            response.setStatus(video.getStatus());
+            response.setUploadedAt(video.getUploadedAt());
+
+            return response;
+        }
+
+
+        //This is for (GET "/api/vidoes/{id}")
         public VideoResponse getVideoById(UUID videoId){
             Optional<Video> videoOptional = videoRepository.findById(videoId);
             if (videoOptional.isEmpty()) {
@@ -140,13 +158,32 @@ import java.util.Optional;
             }
 
             Video video = videoOptional.get();
-            VideoResponse response = new VideoResponse();
-            response.setVideoId(video.getId());
-            response.setOriginalFileName(video.getOriginalFileName());
-            response.setFileSize(video.getFileSize());
-            response.setContentType(video.getContentType());
-            response.setStatus(video.getStatus());
-            response.setUploadedAt(video.getUploadedAt());
-            return response;   
+            return mapToVideoResponse(video);   
+        }
+
+        //This is for (GET "/api/videos")
+        public List<VideoResponse> getAllVideos(){
+            List<Video> videos = videoRepository.findAll();
+            List<VideoResponse> responses = new ArrayList<>();
+            for(Video video:videos){
+                responses.add(mapToVideoResponse(video));
+            }
+            return responses;
+        }
+
+
+        //This is for (DELETE "/api/videos/{id}")
+        public void deleteVideo(UUID videoId) throws IOException {
+            Optional<Video> videoOptional = videoRepository.findById(videoId);
+
+            if (videoOptional.isEmpty()) {
+                throw new VideoNotFoundException("Video not found.");
+            }
+
+            //reconstructing the videopath
+            Video video = videoOptional.get();
+            Path filePath = Paths.get(uploadDir, video.getStoredFileName());
+            Files.deleteIfExists(filePath);
+            videoRepository.delete(video);
         }
     }

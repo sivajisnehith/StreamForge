@@ -2,6 +2,7 @@ package com.Opsfusionn.StreamForge.upload;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.Opsfusionn.StreamForge.controller.VideoController;
 import com.Opsfusionn.StreamForge.dto.VideoResponse;
 import com.Opsfusionn.StreamForge.exception.GlobalExceptionHandler;
 import com.Opsfusionn.StreamForge.model.VideoStatus;
@@ -58,5 +60,39 @@ public class VideoControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Invalid video ID format."));
+    }
+
+    @Test
+    public void testDeleteVideo_Success() throws Exception {
+        UUID validId = UUID.randomUUID();
+        
+        mockMvc.perform(delete("/api/videos/" + validId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testDeleteVideo_NotFound() throws Exception {
+        UUID validId = UUID.randomUUID();
+        
+        org.mockito.Mockito.doThrow(new com.Opsfusionn.StreamForge.exception.VideoNotFoundException("Video not found."))
+                .when(fileStorageService).deleteVideo(any(UUID.class));
+                
+        mockMvc.perform(delete("/api/videos/" + validId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Video not found."));
+    }
+
+    @Test
+    public void testDeleteVideo_IOException() throws Exception {
+        UUID validId = UUID.randomUUID();
+        
+        org.mockito.Mockito.doThrow(new java.io.IOException("Failed to delete file."))
+                .when(fileStorageService).deleteVideo(any(UUID.class));
+                
+        mockMvc.perform(delete("/api/videos/" + validId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Failed to delete file."));
     }
 }
