@@ -1,0 +1,92 @@
+name: AI PR Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches full history so git diff can compare branches reliably
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch Target Branch and Generate Diff
+        run: |
+          # Fetch the base branch (e.g. main) to compare against
+          git fetch origin ${{ github.base_ref }}
+          # Generate clean diff between base branch and current commit
+          git diff origin/${{ github.base_ref }}...HEAD > diff.txt
+          echo "Generated diff file sizes:"
+          ls -lh diff.txt
+
+      - name: Run Groq Review Script
+        id: groq_review
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python review_pr.py
+
+      - name: Verify Review File Exists
+        id: check_file
+        run: |
+          if [ -s "pr_review.md" ]; then
+            echo "file_exists=true" >> $GITHUB_OUTPUT
+            echo "Review contents found:"
+            cat pr_review.md
+          else
+            echo "file_exists=false" >> $GITHUB_OUTPUT
+            echo "Error: pr_review.md is missing or completely empty."
+          fi
+
+      - name: Post Comment to PR
+        if: steps.check_file.outputs.file_exists == 'true'
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: pr_review.md
+
+      - name: Send Email Notification on Failure
+        if: steps.groq_review.outcome == 'failure' || steps.check_file.outputs.file_exists == 'false'
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "⚠️ Critical Error Detected in PR #${{ github.event.pull_request.number }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub AI Reviewer"
+          body: |
+            An issue was detected in Pull Request #${{ github.event.pull_request.number }} ("${{ github.event.pull_request.title }}").
+            
+            The AI code review flagged critical errors or the runner ran into an unexpected issue. The pull request has been automatically closed.
+            
+            You can review the full log and comments directly on the PR here:
+            ${{ github.event.pull_request.html_url }}
+          convert_markdown: true
+
+      - name: Close PR if Critical Errors Found
+        if: steps.groq_review.outcome == 'failure' || steps.check_file.outputs.file_exists == 'false'
+        run: |
+          if [ "${{ steps.check_file.outputs.file_exists }}" = "false" ]; then
+            REASON="The AI code review workflow encountered an internal error or failed to generate a report."
+          else
+            REASON="Closing automatically due to critical errors detected during AI review."
+          fi
+          gh pr close ${{ github.event.pull_request.number }} -c "$REASON"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
