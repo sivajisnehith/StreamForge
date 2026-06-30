@@ -1,4 +1,5 @@
 com\Opsfusionn\StreamForge\StreamForgeApplication.class
+com\Opsfusionn\StreamForge\dto\UpdateVideoStatusRequest.class
 com\Opsfusionn\StreamForge\service\FileStorageService.class
 com\Opsfusionn\StreamForge\model\VideoStatus.class
 com\Opsfusionn\StreamForge\controller\FileUploadController.class

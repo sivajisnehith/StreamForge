@@ -16,21 +16,24 @@
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
-import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
-import com.Opsfusionn.StreamForge.dto.VideoResponse;
+    import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
+    import com.Opsfusionn.StreamForge.dto.VideoResponse;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
+    import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
-
     
     @Service
     public class FileStorageService {
         private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
         private final VideoRepository videoRepository;
+        private final VideoProcessingProducer videoProcessingProducer;
 
-        public FileStorageService(VideoRepository videoRepository) {
+        
+        public FileStorageService(VideoRepository videoRepository, VideoProcessingProducer videoProcessingProducer) {
             this.videoRepository = videoRepository;
+            this.videoProcessingProducer = videoProcessingProducer;
         }
 
         @Value("${streamforge.storage.max-file-size}")
@@ -133,6 +136,7 @@ import com.Opsfusionn.StreamForge.dto.VideoResponse;
             
 
             videoRepository.save(video);
+            videoProcessingProducer.sendMessage(video.getId().toString());
             return video;
         }
 
