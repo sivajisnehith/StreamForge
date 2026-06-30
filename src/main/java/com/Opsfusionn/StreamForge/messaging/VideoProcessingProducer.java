@@ -11,7 +11,7 @@ public class VideoProcessingProducer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(VideoProcessingMessage message) {
         rabbitTemplate.convertAndSend("video.processing", message);
     }
 }

@@ -19,7 +19,8 @@
     import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
     import com.Opsfusionn.StreamForge.dto.VideoResponse;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
-    import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
+import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
+import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
@@ -134,9 +135,15 @@
             video.setStatus(VideoStatus.UPLOADED);
 
             
-
+            //To save the video
             videoRepository.save(video);
-            videoProcessingProducer.sendMessage(video.getId().toString());
+
+            //To send the message we are drafting it here
+            VideoProcessingMessage message = new VideoProcessingMessage();
+            message.setVideoId(video.getId());
+            message.setStoredFileName(video.getStoredFileName());
+            videoProcessingProducer.sendMessage(message);
+            
             return video;
         }
 

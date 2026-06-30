@@ -10,7 +10,9 @@ public class VideoProcessingConsumer {
     private static final Logger logger =
         LoggerFactory.getLogger(VideoProcessingConsumer.class);
     @RabbitListener(queues = "video.processing")
-    public void processVideo(String videoId){
-        logger.info("Received video for processing: {}", videoId);
+    public void processVideo(VideoProcessingMessage message){
+         logger.info("Video ID: {}", message.getVideoId());
+
+        logger.info("Stored File: {}", message.getStoredFileName());
     }
 }
