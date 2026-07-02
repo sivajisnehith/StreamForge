@@ -15,7 +15,7 @@ public class FFmpegService {
 
 
 
-        private ProcessBuilder buildProcessBuilder(Path inputFile,Path outputDirectory) {
+        private ProcessBuilder buildHlsProcessBuilder(Path inputFile,Path outputDirectory) {
             Path playlistFile = outputDirectory.resolve("playlist.m3u8");
             return new ProcessBuilder(
                 "ffmpeg",
@@ -35,6 +35,32 @@ public class FFmpegService {
                 playlistFile.toString()  //generate a playlist now 
             );
         }
+
+        private void generateHls(Path inputFile,Path outputDirectory) throws IOException{
+            ProcessBuilder processBuilder = buildHlsProcessBuilder(inputFile, outputDirectory);
+            executeProcess(processBuilder);
+        }
+        private void generateThumbnail(Path inputFile,Path outputDirectory) throws IOException{
+            ProcessBuilder processBuilder = buildThumbnailProcessBuilder(inputFile, outputDirectory);
+            executeProcess(processBuilder);
+        }
+        private ProcessBuilder buildThumbnailProcessBuilder(Path inputFile,Path outputDirectory){
+            Path thumbnailFile = outputDirectory.resolve("thumbnail.jpg");
+            return new ProcessBuilder(
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    inputFile.toString(),
+                    "-ss",
+                    "00:00:01",
+                    "-frames:v",
+                    "1",
+                    "-update",
+                    "1",
+                    thumbnailFile.toString()
+            );
+        }
+
 
         private void executeProcess(ProcessBuilder processBuilder) throws IOException{
             processBuilder.inheritIO();
@@ -56,12 +82,15 @@ public class FFmpegService {
                 throw new IOException("FFmpeg failed with exit code: " + exitCode);
             }
         }
+
         public void processVideo(Path inputFile, Path outputDirectory) throws IOException {
 
             if (!Files.exists(inputFile)) {
                 throw new IOException("Input video not found: " + inputFile);
             }
-            ProcessBuilder processBuilder = buildProcessBuilder(inputFile, outputDirectory);
-            executeProcess(processBuilder);
+            generateHls(inputFile, outputDirectory);
+            generateThumbnail(inputFile, outputDirectory);
         }
+
+        
 }

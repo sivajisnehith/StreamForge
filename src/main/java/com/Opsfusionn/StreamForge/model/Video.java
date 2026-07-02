@@ -37,6 +37,24 @@ public class Video {
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
 
+    @Column(name = "duration")
+    private Double duration;
+
+    @Column(name = "width")
+    private Integer width;
+
+    @Column(name = "height")
+    private Integer height;
+
+    @Column(name = "video_codec")
+    private String videoCodec;
+
+    @Column(name = "audio_codec")
+    private String audioCodec;
+
+    @Column(name = "bit_rate")
+    private Long bitRate;
+
     @PrePersist
     protected void onCreate() {
         this.uploadedAt = LocalDateTime.now();
@@ -75,6 +93,30 @@ public class Video {
         return uploadedAt;
     }
 
+    public Double getDuration() {
+        return duration;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public String getVideoCodec() {
+        return videoCodec;
+    }
+
+    public String getAudioCodec() {
+        return audioCodec;
+    }
+
+    public Long getBitRate() {
+        return bitRate;
+    }
+
     // Setters
     public void setId(UUID id) {
         this.id = id;
@@ -98,5 +140,29 @@ public class Video {
 
     public void setStatus(VideoStatus status) {
         this.status = status;
+    }
+
+    public void setDuration(Double duration) {
+        this.duration = duration;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setVideoCodec(String videoCodec) {
+        this.videoCodec = videoCodec;
+    }
+
+    public void setAudioCodec(String audioCodec) {
+        this.audioCodec = audioCodec;
+    }
+
+    public void setBitRate(Long bitRate) {
+        this.bitRate = bitRate;
     }
 }
