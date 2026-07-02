@@ -2,6 +2,7 @@ package com.Opsfusionn.StreamForge.exception;
 
 import java.io.IOException;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -54,9 +55,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VideoNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleVideoNotFound(VideoNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse(404, ex.getMessage());
+        
         return ResponseEntity
                 .status(org.springframework.http.HttpStatus.NOT_FOUND)
                 .body(errorResponse);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 }
 

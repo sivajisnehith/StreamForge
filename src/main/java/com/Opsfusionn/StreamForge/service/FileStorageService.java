@@ -16,20 +16,25 @@
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
+    import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
     import com.Opsfusionn.StreamForge.dto.VideoResponse;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
+import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
+import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
-
     
     @Service
     public class FileStorageService {
         private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
         private final VideoRepository videoRepository;
+        private final VideoProcessingProducer videoProcessingProducer;
 
-        public FileStorageService(VideoRepository videoRepository) {
+        
+        public FileStorageService(VideoRepository videoRepository, VideoProcessingProducer videoProcessingProducer) {
             this.videoRepository = videoRepository;
+            this.videoProcessingProducer = videoProcessingProducer;
         }
 
         @Value("${streamforge.storage.max-file-size}")
@@ -127,11 +132,18 @@
             video.setStoredFileName(storedFileName);
             video.setFileSize(file.getSize());
             video.setContentType(contentType);
-            video.setStatus(VideoStatus.PENDING);
+            video.setStatus(VideoStatus.UPLOADED);
 
             
-
+            //To save the video
             videoRepository.save(video);
+
+            //To send the message we are drafting it here
+            VideoProcessingMessage message = new VideoProcessingMessage();
+            message.setVideoId(video.getId());
+            message.setStoredFileName(video.getStoredFileName());
+            videoProcessingProducer.sendMessage(message);
+            
             return video;
         }
 
@@ -186,4 +198,30 @@
             Files.deleteIfExists(filePath);
             videoRepository.delete(video);
         }
+
+        //Method to update the status
+        public void updateVideoStatus(UUID videoId,UpdateVideoStatusRequest request) {
+            Optional<Video> videoOptional = videoRepository.findById(videoId);
+
+            if (videoOptional.isEmpty()) {
+                throw new VideoNotFoundException("Video not found.");
+            }
+
+            Video video = videoOptional.get();
+
+            //check for state machine architecture
+            if (!video.getStatus().canTransitionTo(request.getStatus())) {
+                throw new IllegalStateException(
+                    "Cannot change video status from " +
+                    video.getStatus() +
+                    " to " +
+                    request.getStatus()
+                );
+            }
+
+            video.setStatus(request.getStatus());
+
+            videoRepository.save(video);
+        }
+
     }
