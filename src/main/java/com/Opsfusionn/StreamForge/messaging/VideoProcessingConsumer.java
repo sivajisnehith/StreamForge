@@ -18,8 +18,8 @@ public class VideoProcessingConsumer {
         this.videoProcessingService = videoProcessingService;
     }
 
-    @RabbitListener(queues = "video.processing")
-    public void processVideo(VideoProcessingMessage message){
+    @RabbitListener(queues = "video.processing", errorHandler = "videoProcessingErrorHandler")
+    public void processVideo(VideoProcessingMessage message) throws Exception {
          videoProcessingService.processVideo(message);
     }
 }

@@ -1,4 +1,5 @@
 com\Opsfusionn\StreamForge\messaging\VideoProcessingConsumer.class
+com\Opsfusionn\StreamForge\service\FFmpegService.class
 com\Opsfusionn\StreamForge\StreamForgeApplication.class
 com\Opsfusionn\StreamForge\dto\UpdateVideoStatusRequest.class
 com\Opsfusionn\StreamForge\service\FileStorageService.class
@@ -15,5 +16,6 @@ com\Opsfusionn\StreamForge\config\RabbitMQConfig.class
 com\Opsfusionn\StreamForge\exception\VideoNotFoundException.class
 com\Opsfusionn\StreamForge\service\VideoProcessingService.class
 com\Opsfusionn\StreamForge\messaging\VideoProcessingProducer.class
+com\Opsfusionn\StreamForge\messaging\VideoProcessingErrorHandler.class
 com\Opsfusionn\StreamForge\dto\VideoResponse.class
 com\Opsfusionn\StreamForge\controller\VideoController.class

@@ -1,13 +1,17 @@
 package com.Opsfusionn.StreamForge.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
-import com.Opsfusionn.StreamForge.messaging.VideoProcessingConsumer;
 import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
 import com.Opsfusionn.StreamForge.model.Video;
 import com.Opsfusionn.StreamForge.model.VideoStatus;
@@ -16,13 +20,21 @@ import com.Opsfusionn.StreamForge.repository.VideoRepository;
 @Service
 public class VideoProcessingService {
     private final VideoRepository videoRepository;
-    private static final Logger logger = LoggerFactory.getLogger(VideoProcessingConsumer.class);
+    private final FFmpegService ffmpegService;
+    private static final Logger logger =LoggerFactory.getLogger(VideoProcessingService.class);
 
-    public VideoProcessingService(VideoRepository videoRepository) {
+    @Value("${streamforge.storage.upload-dir}")
+    private String uploadDir;
+
+    @Value("${streamforge.storage.processed-dir}")
+    private String processedDir;
+
+    public VideoProcessingService(VideoRepository videoRepository, FFmpegService ffmpegService) {
         this.videoRepository = videoRepository;
+        this.ffmpegService = ffmpegService;
     }
 
-    public void processVideo(VideoProcessingMessage message) {
+    public void processVideo(VideoProcessingMessage message) throws Exception {
          Optional<Video> videoOptional = videoRepository.findById(message.getVideoId());
             if (videoOptional.isEmpty()) {
                 throw new VideoNotFoundException("Video not found.");
@@ -38,15 +50,18 @@ public class VideoProcessingService {
             videoRepository.save(video);
             
             logger.info("Video {} status updated to PROCESSING", video.getId());
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException ex) {
-                System.getLogger(VideoProcessingService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
-            }
+            Path inputFile = Paths.get(uploadDir, message.getStoredFileName());
+            Path outputDirectory = Paths.get(processedDir, video.getId().toString());
+            Files.createDirectories(outputDirectory);
+            
+            ffmpegService.processVideo(inputFile, outputDirectory);
+            Path outputFile = outputDirectory.resolve("playlist.m3u8");
 
+            if (!Files.exists(outputFile)) {
+                throw new IOException("FFmpeg completed but HLS playlist file (playlist.m3u8) was not created.");
+            }
             video.setStatus(VideoStatus.COMPLETED);
             videoRepository.save(video);
-
             logger.info("Video {} status updated to COMPLETED", video.getId());
     }
 
