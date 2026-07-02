@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.Opsfusionn.StreamForge.config.VideoRenditions;
+import com.Opsfusionn.StreamForge.model.VideoRendition;
+
 @Service
 public class FFmpegService {
     private static final Logger logger =
@@ -15,8 +18,18 @@ public class FFmpegService {
 
 
 
-        private ProcessBuilder buildHlsProcessBuilder(Path inputFile,Path outputDirectory) {
-            Path playlistFile = outputDirectory.resolve("playlist.m3u8");
+        private ProcessBuilder buildHlsProcessBuilder(
+                Path inputFile,
+                Path outputDirectory,
+                VideoRendition rendition) throws IOException {
+            Path renditionDirectory =
+                    outputDirectory.resolve(rendition.getName());
+
+            Files.createDirectories(renditionDirectory);
+
+            Path playlistFile =
+                    renditionDirectory.resolve("playlist.m3u8");
+
             return new ProcessBuilder(
                 "ffmpeg",
                 "-y",   //overwrite existing files
@@ -24,6 +37,10 @@ public class FFmpegService {
                 inputFile.toString(),   
                 "-c:v",
                 "libx264",  //Encode video
+                "-vf",
+                "scale=" + rendition.getWidth() + ":" + rendition.getHeight(),
+                "-b:v",
+                rendition.getVideoBitrate(),
                 "-c:a",
                 "aac",   //Encode audio
                 "-hls_time",
@@ -31,16 +48,31 @@ public class FFmpegService {
                 "-hls_playlist_type",   //video on demand
                 "vod",
                 "-hls_segment_filename",  //name segment files
-                outputDirectory.resolve("segment%03d.ts").toString(),
+                renditionDirectory.resolve("segment%03d.ts").toString(),
                 playlistFile.toString()  //generate a playlist now 
             );
         }
 
-        private void generateHls(Path inputFile,Path outputDirectory) throws IOException{
-            ProcessBuilder processBuilder = buildHlsProcessBuilder(inputFile, outputDirectory);
-            executeProcess(processBuilder);
+        public void generateHls(Path inputFile, Path outputDirectory) throws IOException {
+            for (VideoRendition rendition : VideoRenditions.getSupportedRenditions()) {
+                generateHlsForRendition(inputFile, outputDirectory, rendition);
+            }
         }
-        private void generateThumbnail(Path inputFile,Path outputDirectory) throws IOException{
+
+        private void generateHlsForRendition(
+                Path inputFile,
+                Path outputDirectory,
+                VideoRendition rendition)
+                throws IOException {
+            ProcessBuilder builder =
+                    buildHlsProcessBuilder(
+                            inputFile,
+                            outputDirectory,
+                            rendition);
+
+            executeProcess(builder);
+        }
+        public void generateThumbnail(Path inputFile,Path outputDirectory) throws IOException{
             ProcessBuilder processBuilder = buildThumbnailProcessBuilder(inputFile, outputDirectory);
             executeProcess(processBuilder);
         }

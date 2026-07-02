@@ -1,5 +1,8 @@
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\MinioConfig.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\RabbitMQConfig.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\VideoRenditions.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\FileUploadController.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\MinioTestController.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\VideoController.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ErrorResponse.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeFormat.java
@@ -17,11 +20,14 @@ C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamFor
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\messaging\VideoProcessingMessage.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\messaging\VideoProcessingProducer.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\Video.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\VideoRendition.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\VideoStatus.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\repository\VideoRepository.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFmpegService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFprobeMapper.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFProbeService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FileStorageService.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\MasterPlaylistService.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\MinioService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\VideoProcessingService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\StreamForgeApplication.java

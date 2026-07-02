@@ -25,7 +25,8 @@ import com.Opsfusionn.StreamForge.repository.VideoRepository;
 public class VideoProcessingService {
     private final VideoRepository videoRepository;
     private final FFmpegService ffmpegService;
-    private final FFProbeService ffprobeService;
+    private final FFProbeService ffProbeService;
+    private final MasterPlaylistService masterPlaylistService;
     
     private static final Logger logger = LoggerFactory.getLogger(VideoProcessingService.class);
 
@@ -37,10 +38,12 @@ public class VideoProcessingService {
 
     public VideoProcessingService(VideoRepository videoRepository, 
                                   FFmpegService ffmpegService, 
-                                  FFProbeService ffprobeService) {
+                                  FFProbeService ffProbeService,
+                                  MasterPlaylistService masterPlaylistService) {
         this.videoRepository = videoRepository;
         this.ffmpegService = ffmpegService;
-        this.ffprobeService = ffprobeService;
+        this.ffProbeService = ffProbeService;
+        this.masterPlaylistService = masterPlaylistService;
     }
 
     /**
@@ -67,19 +70,25 @@ public class VideoProcessingService {
         Path outputDirectory = Paths.get(processedDir, video.getId().toString());
         Files.createDirectories(outputDirectory);
         
-        // 1. Generate HLS & Thumbnail
-        ffmpegService.processVideo(inputFile, outputDirectory);
-        Path outputFile = outputDirectory.resolve("playlist.m3u8");
+        // 1. Generate Renditions
+        ffmpegService.generateHls(inputFile, outputDirectory);
 
+        // 2. Generate Master Playlist
+        masterPlaylistService.generateMasterPlaylist(outputDirectory);
+
+        // 3. Generate Thumbnail
+        ffmpegService.generateThumbnail(inputFile, outputDirectory);
+
+        Path outputFile = outputDirectory.resolve("master.m3u8");
         if (!Files.exists(outputFile)) {
-            throw new IOException("FFmpeg completed but HLS playlist file (playlist.m3u8) was not created.");
+            throw new IOException("HLS master playlist file (master.m3u8) was not created.");
         }
 
-        // 2. Extract Metadata
+        // 4. Extract Metadata
         logger.info("Extracting metadata for video {}", video.getId());
-        VideoMetadata metadata = ffprobeService.extractMetadata(inputFile);
+        VideoMetadata metadata = ffProbeService.extractMetadata(inputFile);
 
-        // 3. Copy metadata into Video entity
+        // 5. Persist Metadata
         video.setDuration(metadata.getDuration());
         video.setWidth(metadata.getWidth());
         video.setHeight(metadata.getHeight());
@@ -87,7 +96,7 @@ public class VideoProcessingService {
         video.setAudioCodec(metadata.getAudioCodec());
         video.setBitRate(metadata.getBitRate());
 
-        // 4. Save Video and Update status to COMPLETED
+        // 6. Save Video and Update status to COMPLETED
         video.setStatus(VideoStatus.COMPLETED);
         videoRepository.save(video);
         logger.info("Video {} status updated to COMPLETED with metadata", video.getId());
