@@ -1,3 +1,5 @@
 com\Opsfusionn\StreamForge\StreamForgeApplicationTests.class
 com\Opsfusionn\StreamForge\messaging\VideoProcessingErrorHandlerTest.class
 com\Opsfusionn\StreamForge\upload\VideoControllerTest.class
+com\Opsfusionn\StreamForge\service\MasterPlaylistServiceTest.class
+com\Opsfusionn\StreamForge\service\FFprobeMapperTest.class

@@ -1,9 +1,7 @@
     package com.Opsfusionn.StreamForge.service;
-    import java.io.File;
     import java.io.IOException;
     import java.nio.file.Files;
     import java.nio.file.Path;
-    import java.nio.file.Paths;
     import java.util.ArrayList;
     import java.util.List;
     import java.util.Optional;
@@ -30,11 +28,12 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
         private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
         private final VideoRepository videoRepository;
         private final VideoProcessingProducer videoProcessingProducer;
-
+        private final MinioService minioService;
         
-        public FileStorageService(VideoRepository videoRepository, VideoProcessingProducer videoProcessingProducer) {
+        public FileStorageService(VideoRepository videoRepository, VideoProcessingProducer videoProcessingProducer,MinioService minioService) {
             this.videoRepository = videoRepository;
             this.videoProcessingProducer = videoProcessingProducer;
+            this.minioService = minioService;
         }
 
         @Value("${streamforge.storage.max-file-size}")
@@ -48,11 +47,6 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
 
         private static final Set<String> ALLOWED_EXTENSIONS =
         Set.of(".mp4", ".mkv", ".mov");
-
-
-        @Value("${streamforge.storage.upload-dir}")
-        private String uploadDir;
-
 
         public Video storeFile(MultipartFile file) throws IOException{
             if (file.isEmpty()) {
@@ -68,14 +62,7 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
             //names of content type and file size
             logger.info("Content type: {}", contentType);
             logger.info("File size: {} bytes", file.getSize());
-            File directory = new File(uploadDir);
-
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs();
-                if (!created) {
-                    throw new IOException("Could not create upload directory.");
-                }
-            }
+            
 
             //original filename
             String originalFileName = file.getOriginalFilename();
@@ -114,16 +101,15 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
             logger.info("Original file: {}", originalFileName);
             logger.info("Stored file: {}", storedFileName);
             
-            //we are using paths.get to basically use the correct / because of different os
-            Path filePath = Paths.get(uploadDir, storedFileName);
+            
+            Path tempUploadFile =Files.createTempFile("streamforge-upload-", extension);
             try {
-                Files.write(filePath, file.getBytes());
-            }
-            catch(IOException ex){
-                throw new IOException(
-                        "Failed to save file.",
-                        ex
-                );
+                file.transferTo(tempUploadFile);
+                minioService.uploadOriginalFile(
+                        storedFileName,
+                        tempUploadFile);
+            } finally {
+                Files.deleteIfExists(tempUploadFile);
             }
 
             Video video = new Video();
@@ -185,17 +171,17 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
 
 
         //This is for (DELETE "/api/videos/{id}")
-        public void deleteVideo(UUID videoId) throws IOException {
+        public void deleteVideo(UUID videoId) {
+
             Optional<Video> videoOptional = videoRepository.findById(videoId);
 
             if (videoOptional.isEmpty()) {
                 throw new VideoNotFoundException("Video not found.");
             }
 
-            //reconstructing the videopath
             Video video = videoOptional.get();
-            Path filePath = Paths.get(uploadDir, video.getStoredFileName());
-            Files.deleteIfExists(filePath);
+
+            // TODO: Delete object from MinIO
             videoRepository.delete(video);
         }
 

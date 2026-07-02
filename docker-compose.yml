@@ -21,9 +21,9 @@ services:
     restart: unless-stopped
 
     ports:
-      - "5672:5672"   #To communicate to rabbitmQ by springboot
-      - "15672:15672"  # To communicate to rabbitMQ by browser 
-#never ever the sprinboot communicates to rabbitMQ by 156272 and vicecersa
+      - "5672:5672"     # Spring Boot ↔ RabbitMQ
+      - "15672:15672"   # RabbitMQ Management UI
+
     environment:
       RABBITMQ_DEFAULT_USER: streamforge
       RABBITMQ_DEFAULT_PASS: streamforge_pass
@@ -31,6 +31,25 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  minio:
+    image: minio/minio
+    container_name: streamforge-minio
+    restart: unless-stopped
+
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+
+    command: server /data --console-address ":9001"
+
+    ports:
+      - "9000:9000"     # MinIO API
+      - "9001:9001"     # MinIO Console
+
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
   rabbitmq_data:
+  minio_data:

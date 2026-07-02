@@ -1,0 +1,25 @@
+# Maven build output
+/target/
+*.class
+
+# Log files
+*.log
+
+# Local media, uploads and processing directories
+/uploads/
+/storage/
+
+# IDE configurations
+/.vscode/
+/.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS-specific files
+Thumbs.db
+Db.crypt
+.DS_Store
