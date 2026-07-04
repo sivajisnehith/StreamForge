@@ -56,7 +56,7 @@ public class VideoStreamingControllerTest {
 
         mockMvc.perform(get("/api/videos/" + videoId + "/720p.m3u8"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/x-mpegURL"))
+                .andExpect(content().contentType("application/vnd.apple.mpegurl"))
                 .andExpect(content().bytes(contentBytes));
     }
 
@@ -66,11 +66,11 @@ public class VideoStreamingControllerTest {
         byte[] contentBytes = new byte[]{5, 6, 7, 8};
         ByteArrayInputStream mockInputStream = new ByteArrayInputStream(contentBytes);
 
-        when(minioService.getProcessedObject(eq(videoId), eq("720p_000.ts"))).thenReturn(mockInputStream);
+        when(minioService.getProcessedObject(eq(videoId), eq("1080/segment000.ts"))).thenReturn(mockInputStream);
 
-        mockMvc.perform(get("/api/videos/" + videoId + "/720p_000.ts"))
+        mockMvc.perform(get("/api/videos/" + videoId + "/1080/segment000.ts"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("video/MP2T"))
+                .andExpect(content().contentType("video/mp2t"))
                 .andExpect(content().bytes(contentBytes));
     }
 

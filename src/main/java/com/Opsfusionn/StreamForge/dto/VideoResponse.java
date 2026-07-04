@@ -2,6 +2,7 @@ package com.Opsfusionn.StreamForge.dto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 import com.Opsfusionn.StreamForge.model.VideoStatus;
 
 public class VideoResponse {
@@ -11,6 +12,16 @@ public class VideoResponse {
     private String contentType;
     private VideoStatus status;
     private LocalDateTime uploadedAt;
+
+    private String thumbnailUrl;
+    private String masterPlaylistUrl;
+
+    private Double duration;
+    private Integer width;
+    private Integer height;
+    private String videoCodec;
+    private String audioCodec;
+    private Long bitRate;
 
     public VideoResponse() {
     }
@@ -22,6 +33,25 @@ public class VideoResponse {
         this.contentType = contentType;
         this.status = status;
         this.uploadedAt = uploadedAt;
+    }
+
+    public VideoResponse(UUID videoId, String originalFileName, long fileSize, String contentType, VideoStatus status, LocalDateTime uploadedAt, String thumbnailUrl, String masterPlaylistUrl, Double duration, Integer width, Integer height, String videoCodec, String audioCodec, Long bitRate) {
+        this.videoId = videoId;
+        this.originalFileName = originalFileName;
+        this.fileSize = fileSize;
+        this.contentType = contentType;
+        this.status = status;
+        this.uploadedAt = uploadedAt;
+
+        this.masterPlaylistUrl = masterPlaylistUrl;
+        this.thumbnailUrl = thumbnailUrl;
+
+        this.duration = duration;
+        this.width = width;
+        this.height = height;
+        this.videoCodec = videoCodec;
+        this.audioCodec = audioCodec;
+        this.bitRate = bitRate;
     }
 
     public UUID getVideoId() {
@@ -70,5 +100,69 @@ public class VideoResponse {
 
     public void setUploadedAt(LocalDateTime uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public String getMasterPlaylistUrl() {
+        return masterPlaylistUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public void setMasterPlaylistUrl(String masterPlaylistUrl) {
+        this.masterPlaylistUrl = masterPlaylistUrl;
+    }
+
+    public Double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Double duration) {
+        this.duration = duration;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public String getVideoCodec() {
+        return videoCodec;
+    }
+
+    public void setVideoCodec(String videoCodec) {
+        this.videoCodec = videoCodec;
+    }
+
+    public String getAudioCodec() {
+        return audioCodec;
+    }
+
+    public void setAudioCodec(String audioCodec) {
+        this.audioCodec = audioCodec;
+    }
+
+    public Long getBitRate() {
+        return bitRate;
+    }
+
+    public void setBitRate(Long bitRate) {
+        this.bitRate = bitRate;
     }
 }

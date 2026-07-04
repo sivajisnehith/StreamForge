@@ -4,6 +4,7 @@ com\Opsfusionn\StreamForge\model\VideoStatus.class
 com\Opsfusionn\StreamForge\exception\GlobalExceptionHandler.class
 com\Opsfusionn\StreamForge\config\MinioConfig.class
 com\Opsfusionn\StreamForge\messaging\VideoProcessingMessage.class
+com\Opsfusionn\StreamForge\controller\VideoStreamingController.class
 com\Opsfusionn\StreamForge\dto\UploadResponse.class
 com\Opsfusionn\StreamForge\model\Video.class
 com\Opsfusionn\StreamForge\dto\VideoMetadata.class
