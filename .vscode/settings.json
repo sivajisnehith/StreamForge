@@ -1,4 +1,15 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.jdt.ls.vmargs": "-XX:+UseG1GC -XX:+UseStringDeduplication -Xms1g -Xmx2g",
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/.git/**": true,
+        "**/.mvn/**": true
+    },
+    "files.exclude": {
+        "**/target": true
+    },
+    "java.import.gradle.enabled": false,
+    "editor.suggestOnTriggerCharacters": true
 }
