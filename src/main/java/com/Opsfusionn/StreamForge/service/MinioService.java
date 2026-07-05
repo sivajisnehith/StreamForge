@@ -1,11 +1,14 @@
  package com.Opsfusionn.StreamForge.service;
     
+    import java.io.InputStream;
     import java.nio.file.Path;
+    import java.util.UUID;
 
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.stereotype.Service;
 
-    import io.minio.MinioClient;
+import io.minio.GetObjectArgs;
+import io.minio.MinioClient;
     import io.minio.UploadObjectArgs;
 
 @Service
@@ -25,7 +28,6 @@ public class MinioService {
     public void uploadOriginalFile(String objectName, Path filePath) {
 
         try {
-
             minioClient.uploadObject(
                     UploadObjectArgs.builder()
                             .bucket(originalBucket)
@@ -38,8 +40,26 @@ public class MinioService {
         }
     }
 
-    public void downloadOriginalFile(String objectName,Path destination){
-
+    //To basically retrieve the required video
+    public InputStream getProcessedObject(UUID videoId,String objectName){
+        try {
+            return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(processedBucket)
+                        .object(videoId + "/" + objectName)
+                        .build());
+        } catch (Exception e) {
+            if (e instanceof io.minio.errors.ErrorResponseException) {
+                io.minio.errors.ErrorResponseException ere = (io.minio.errors.ErrorResponseException) e;
+                if ("NoSuchKey".equals(ere.errorResponse().code())) {
+                    throw new com.Opsfusionn.StreamForge.exception.VideoNotFoundException(
+                        "Processed video file or playlist not found: " + objectName
+                    );
+                }
+            }
+             throw new RuntimeException(
+                "Failed to retrieve processed object from MinIO.",
+                e);
+        }
     }
-
 }

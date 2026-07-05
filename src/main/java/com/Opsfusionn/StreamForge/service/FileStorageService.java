@@ -144,6 +144,19 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
             response.setStatus(video.getStatus());
             response.setUploadedAt(video.getUploadedAt());
 
+            response.setThumbnailUrl(
+                    "/api/videos/" + video.getId() + "/thumbnail.jpg");
+
+            response.setMasterPlaylistUrl(
+                    "/api/videos/" + video.getId() + "/master.m3u8");
+
+            response.setDuration(video.getDuration());
+            response.setWidth(video.getWidth());
+            response.setHeight(video.getHeight());
+            response.setVideoCodec(video.getVideoCodec());
+            response.setAudioCodec(video.getAudioCodec());
+            response.setBitRate(video.getBitRate());
+
             return response;
         }
 

@@ -87,8 +87,9 @@ public class VideoControllerTest {
     public void testDeleteVideo_IOException() throws Exception {
         UUID validId = UUID.randomUUID();
         
-        org.mockito.Mockito.doThrow(new java.io.IOException("Failed to delete file."))
-                .when(fileStorageService).deleteVideo(any(UUID.class));
+        org.mockito.Mockito.doAnswer(invocation -> {
+            throw new java.io.IOException("Failed to delete file.");
+        }).when(fileStorageService).deleteVideo(any(UUID.class));
                 
         mockMvc.perform(delete("/api/videos/" + validId))
                 .andExpect(status().isBadRequest())
