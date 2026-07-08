@@ -24,6 +24,7 @@ com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeFormat.class
 com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeStream.class
 com\Opsfusionn\StreamForge\service\FFProbeService.class
 com\Opsfusionn\StreamForge\dto\ErrorResponse.class
+com\Opsfusionn\StreamForge\dto\VideoUploadRequest.class
 com\Opsfusionn\StreamForge\exception\VideoNotFoundException.class
 com\Opsfusionn\StreamForge\service\VideoProcessingService.class
 com\Opsfusionn\StreamForge\messaging\VideoProcessingProducer.class

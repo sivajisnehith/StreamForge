@@ -6,10 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.web.bind.annotation.RequestPart;
+import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
 import com.Opsfusionn.StreamForge.dto.UploadResponse;
+import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
 import com.Opsfusionn.StreamForge.model.Video;
 import com.Opsfusionn.StreamForge.service.FileStorageService;
 @RestController
@@ -23,8 +26,8 @@ public class FileUploadController{
     }
 
         @PostMapping("/upload")
-        public ResponseEntity<UploadResponse> uploadFile(@RequestParam MultipartFile file) throws IOException{
-                Video video = fileStorageService.storeFile(file);
+        public ResponseEntity<UploadResponse> uploadFile(@RequestParam MultipartFile file, @RequestPart("metadata") VideoUploadRequest metadata) throws IOException{
+                Video video = fileStorageService.storeFile(file,metadata);
                 UploadResponse response = new UploadResponse(video.getStoredFileName(), "Video uploaded successfully.", video.getId());
                 return ResponseEntity.ok(response);
         }

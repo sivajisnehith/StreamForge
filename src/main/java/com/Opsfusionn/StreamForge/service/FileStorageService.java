@@ -1,9 +1,7 @@
-    package com.Opsfusionn.StreamForge.service;
+package com.Opsfusionn.StreamForge.service;
     import java.io.IOException;
     import java.nio.file.Files;
     import java.nio.file.Path;
-    import java.util.ArrayList;
-    import java.util.List;
     import java.util.Optional;
     import java.util.Set;
     import java.util.UUID;
@@ -11,14 +9,17 @@
     import org.slf4j.Logger;
     import org.slf4j.LoggerFactory;
     import org.springframework.beans.factory.annotation.Value;
+    import org.springframework.data.domain.Page;
+    import org.springframework.data.domain.Pageable;
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
     import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
     import com.Opsfusionn.StreamForge.dto.VideoResponse;
+import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
-import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
-import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
+    import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
+    import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
@@ -48,7 +49,7 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
         private static final Set<String> ALLOWED_EXTENSIONS =
         Set.of(".mp4", ".mkv", ".mov");
 
-        public Video storeFile(MultipartFile file) throws IOException{
+        public Video storeFile(MultipartFile file, VideoUploadRequest metadata) throws IOException{
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file is empty.");
             }
@@ -119,7 +120,8 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
             video.setFileSize(file.getSize());
             video.setContentType(contentType);
             video.setStatus(VideoStatus.UPLOADED);
-
+            video.setTitle(metadata.getTitle());
+            video.setDescription(metadata.getDescription());
             
             //To save the video
             videoRepository.save(video);
@@ -156,6 +158,8 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
             response.setVideoCodec(video.getVideoCodec());
             response.setAudioCodec(video.getAudioCodec());
             response.setBitRate(video.getBitRate());
+            response.setTitle(video.getTitle());
+            response.setDescription(video.getDescription());
 
             return response;
         }
@@ -173,13 +177,14 @@ import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
         }
 
         //This is for (GET "/api/videos")
-        public List<VideoResponse> getAllVideos(){
-            List<Video> videos = videoRepository.findAll();
-            List<VideoResponse> responses = new ArrayList<>();
-            for(Video video:videos){
-                responses.add(mapToVideoResponse(video));
+        public Page<VideoResponse> getAllVideos(String search, Pageable pageable) {
+            Page<Video> videos;
+            if (search == null || search.isBlank()) {
+                videos = videoRepository.findAll(pageable);
+            } else {
+                videos = videoRepository.findByTitleContainingIgnoreCase(search, pageable);
             }
-            return responses;
+            return videos.map(this::mapToVideoResponse);
         }
 
 

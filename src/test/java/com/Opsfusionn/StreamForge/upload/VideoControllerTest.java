@@ -96,4 +96,126 @@ public class VideoControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Failed to delete file."));
     }
+
+    // Test 1 - No search
+    @Test
+    public void testGetAllVideos_NoSearch() throws Exception {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        VideoResponse v1 = new VideoResponse(id1, "v1.mp4", 100L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v1.setTitle("Spring Boot Tutorial");
+        VideoResponse v2 = new VideoResponse(id2, "v2.mp4", 200L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v2.setTitle("Java Programming");
+
+        org.springframework.data.domain.Page<VideoResponse> mockPage = new org.springframework.data.domain.PageImpl<>(
+                java.util.List.of(v1, v2)
+        );
+
+        when(fileStorageService.getAllVideos(org.mockito.ArgumentMatchers.eq(null), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/videos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].title").value("Spring Boot Tutorial"))
+                .andExpect(jsonPath("$.content[1].title").value("Java Programming"));
+    }
+
+    // Test 2 - Search by title
+    @Test
+    public void testGetAllVideos_SearchByTitle() throws Exception {
+        UUID id = UUID.randomUUID();
+        VideoResponse v = new VideoResponse(id, "v1.mp4", 100L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v.setTitle("Spring Boot Tutorial");
+
+        org.springframework.data.domain.Page<VideoResponse> mockPage = new org.springframework.data.domain.PageImpl<>(
+                java.util.List.of(v)
+        );
+
+        when(fileStorageService.getAllVideos(org.mockito.ArgumentMatchers.eq("Spring"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/videos").param("search", "Spring"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Spring Boot Tutorial"));
+    }
+
+    // Test 3 - Case insensitive search
+    @Test
+    public void testGetAllVideos_CaseInsensitiveSearch() throws Exception {
+        UUID id = UUID.randomUUID();
+        VideoResponse v = new VideoResponse(id, "v1.mp4", 100L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v.setTitle("Spring Boot Tutorial");
+
+        org.springframework.data.domain.Page<VideoResponse> mockPage = new org.springframework.data.domain.PageImpl<>(
+                java.util.List.of(v)
+        );
+
+        when(fileStorageService.getAllVideos(org.mockito.ArgumentMatchers.eq("spring"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/videos").param("search", "spring"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Spring Boot Tutorial"));
+    }
+
+    // Test 4 - Partial search
+    @Test
+    public void testGetAllVideos_PartialSearch() throws Exception {
+        UUID id = UUID.randomUUID();
+        VideoResponse v = new VideoResponse(id, "v1.mp4", 100L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v.setTitle("Spring Boot Tutorial");
+
+        org.springframework.data.domain.Page<VideoResponse> mockPage = new org.springframework.data.domain.PageImpl<>(
+                java.util.List.of(v)
+        );
+
+        when(fileStorageService.getAllVideos(org.mockito.ArgumentMatchers.eq("Boot"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/videos").param("search", "Boot"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Spring Boot Tutorial"));
+    }
+
+    // Test 5 - Search + Pagination
+    @Test
+    public void testGetAllVideos_SearchAndPagination() throws Exception {
+        UUID id = UUID.randomUUID();
+        VideoResponse v = new VideoResponse(id, "v1.mp4", 100L, "video/mp4", VideoStatus.COMPLETED, LocalDateTime.now());
+        v.setTitle("Spring Boot Tutorial");
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 1);
+        org.springframework.data.domain.Page<VideoResponse> mockPage = new org.springframework.data.domain.PageImpl<>(
+                java.util.List.of(v),
+                pageable,
+                5
+        );
+
+        when(fileStorageService.getAllVideos(org.mockito.ArgumentMatchers.eq("Spring"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/videos")
+                .param("search", "Spring")
+                .param("page", "0")
+                .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Spring Boot Tutorial"))
+                .andExpect(jsonPath("$.totalElements").value(5));
+    }
+
+
+    @Test
+    public void testUpdateVideoStatus_Success() throws Exception {
+        UUID validId = UUID.randomUUID();
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/videos/" + validId + "/status")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"status\": \"PROCESSING\"}"))
+                .andExpect(status().isNoContent());
+    }
 }
