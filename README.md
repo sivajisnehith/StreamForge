@@ -100,6 +100,14 @@ The platform separates the upload API from processing workers, executing operati
 
 ---
 
+## 🔒 Authentication Flow
+
+Here is the secure authentication and authorization flow of **StreamForge**:
+
+<img src="docs/images/authentication_flow.png" alt="Authentication Flow" width="650">
+
+---
+
 ## ✨ Core Features
 
 *   **Asynchronous Processing**: Immediate HTTP returns on video upload, delegating encoding tasks to RabbitMQ background listeners.
