@@ -225,6 +225,10 @@ interactive API console to test the endpoints:
 
 ### Console Output
 
+The console output showing quality level switching (from level 2 to level 0)
+based on connection bandwidth changes proves that the HLS adaptive bitrate
+streaming works successfully.
+
 <p align="center">
 <img src="docs/screenshots/streaming-1.png" width="400">
 </p>
