@@ -34,6 +34,12 @@ public class VideoStreamingControllerTest {
     @MockitoBean
     private MinioService minioService;
 
+    @MockitoBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private com.Opsfusionn.StreamForge.service.JwtService jwtService;
+
     @Test
     public void testStreamMasterPlaylist_Success() throws Exception {
         UUID videoId = UUID.randomUUID();

@@ -3,6 +3,7 @@ package com.Opsfusionn.StreamForge.messaging;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.listener.api.RabbitListenerErrorHandler;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.messaging.Message;
@@ -40,6 +41,6 @@ public class VideoProcessingErrorHandler implements RabbitListenerErrorHandler {
         } else {
             logger.error("Global listener error handler caught exception, payload is not VideoProcessingMessage: {}", exception.getMessage());
         }
-        throw exception;
+        throw new AmqpRejectAndDontRequeueException("Terminal processing error, rejecting message.", exception);
     }
 }

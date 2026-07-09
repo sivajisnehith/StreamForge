@@ -11,15 +11,18 @@ package com.Opsfusionn.StreamForge.service;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.data.domain.Page;
     import org.springframework.data.domain.Pageable;
+    import org.springframework.security.core.context.SecurityContextHolder;
     import org.springframework.stereotype.Service;
     import org.springframework.web.multipart.MultipartFile;
 
     import com.Opsfusionn.StreamForge.dto.UpdateVideoStatusRequest;
     import com.Opsfusionn.StreamForge.dto.VideoResponse;
-import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
+    import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
+    import com.Opsfusionn.StreamForge.exception.VideoAccessDeniedException;
     import com.Opsfusionn.StreamForge.exception.VideoNotFoundException;
     import com.Opsfusionn.StreamForge.messaging.VideoProcessingMessage;
     import com.Opsfusionn.StreamForge.messaging.VideoProcessingProducer;
+    import com.Opsfusionn.StreamForge.model.User;
     import com.Opsfusionn.StreamForge.model.Video;
     import com.Opsfusionn.StreamForge.model.VideoStatus;
     import com.Opsfusionn.StreamForge.repository.VideoRepository;
@@ -122,6 +125,13 @@ import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
             video.setStatus(VideoStatus.UPLOADED);
             video.setTitle(metadata.getTitle());
             video.setDescription(metadata.getDescription());
+
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof User) {
+                video.setUser((User) principal);
+            } else {
+                throw new VideoAccessDeniedException("User not authenticated.");
+            }
             
             //To save the video
             videoRepository.save(video);
@@ -188,6 +198,18 @@ import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
         }
 
 
+        private void verifyVideoOwnership(Video video) {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof User) {
+                User currentUser = (User) principal;
+                if (video.getUser() == null || !video.getUser().getId().equals(currentUser.getId())) {
+                    throw new VideoAccessDeniedException("You do not have permission to modify this video.");
+                }
+            } else {
+                throw new VideoAccessDeniedException("User not authenticated.");
+            }
+        }
+
         //This is for (DELETE "/api/videos/{id}")
         public void deleteVideo(UUID videoId) {
 
@@ -198,6 +220,7 @@ import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
             }
 
             Video video = videoOptional.get();
+            verifyVideoOwnership(video);
 
             // TODO: Delete object from MinIO
             videoRepository.delete(video);
@@ -212,6 +235,7 @@ import com.Opsfusionn.StreamForge.dto.VideoUploadRequest;
             }
 
             Video video = videoOptional.get();
+            verifyVideoOwnership(video);
 
             //check for state machine architecture
             if (!video.getStatus().canTransitionTo(request.getStatus())) {

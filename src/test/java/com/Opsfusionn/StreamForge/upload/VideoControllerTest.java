@@ -35,6 +35,12 @@ public class VideoControllerTest {
     @MockitoBean
     private FileStorageService fileStorageService;
 
+    @MockitoBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private com.Opsfusionn.StreamForge.service.JwtService jwtService;
+
     @Test
     public void testGetVideoById_Success() throws Exception {
         UUID validId = UUID.randomUUID();
