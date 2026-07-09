@@ -5,41 +5,29 @@ HLS transcoding, metadata extraction, and streaming.
 
 ## Project Overview
 
-StreamForge is designed to handle video ingestion and streaming at scale.
-Instead of performing resource-intensive video transcoding synchronously within
-the HTTP request thread, the application decouples the upload lifecycle from
-the processing pipeline using an asynchronous message-driven architecture.
+StreamForge is designed to handle video ingestion and streaming. Instead of
+performing resource-intensive video transcoding synchronously within the HTTP
+request thread, the application decouples the upload lifecycle from the
+processing pipeline using an asynchronous message-driven architecture.
 
 When a client uploads a video, the request is received by the Spring Boot API,
 which writes the original raw video file to a MinIO object storage bucket and
-saves the initial video metadata (such as title, description, and status set to
-`UPLOADED`) to a PostgreSQL database. 
+saves the initial video metadata to a PostgreSQL database. The API then
+publishes a message to a RabbitMQ queue and returns a success response with
+the video ID.
 
-The API then publishes a message to a RabbitMQ queue and returns a success
-response with the video ID. A background consumer process listens to the
-queue, downloads the original video, executes FFmpeg to perform
-multi-resolution HLS transcoding, invokes FFprobe to analyze stream metadata,
-uploads the final HLS segments and thumbnail back to MinIO, and updates the
-database record with the new status and video properties.
+A background consumer process listens to the queue, downloads the original
+video, executes FFmpeg to perform multi-resolution HLS transcoding, invokes
+FFprobe to analyze stream metadata, uploads the final HLS segments and
+thumbnail back to MinIO, and updates the database record with the new status
+and video properties.
 
 ## System Architecture
 
-The system is composed of several decoupled layers to ensure strict separation
-of concerns and resource isolation during processing:
-
-* **Client Interface**: Directs file uploads and HLS playback requests.
-* **API Controller Layer**: Handles HTTP requests, manages authentication filters,
-  validates payloads, and interacts with metadata repositories.
-* **Message Broker (RabbitMQ)**: Buffers video processing tasks to protect
-  application resources from spikes in upload traffic.
-* **Background Worker Layer**: Consumes tasks from the queue and processes them
-  in isolated filesystem sandbox directories.
-* **Object Storage (MinIO)**: Serves as the central repository for raw video
-  files and transcoded media streams.
-* **Metadata Store (PostgreSQL)**: Persists user accounts and video profiles.
+The following diagram shows the overall architecture of StreamForge.
 
 <p align="center">
-  <img src="docs/images/architecture.png" width="900">
+  <img src="docs/images/architecture.png" width="750">
 </p>
 
 ## Key Features
@@ -74,82 +62,35 @@ of concerns and resource isolation during processing:
 
 ## Video Processing Pipeline
 
-The transcoding pipeline operates sequentially, moving raw video inputs through
-the following lifecycle stages:
+The following diagram illustrates how an uploaded video moves through the processing pipeline.
 
 <p align="center">
-  <img src="docs/images/pipeline.png" width="900">
+  <img src="docs/images/pipeline.png" width="750">
 </p>
-
-1. **Ingestion & Validation**: The API validates that the input file is not
-   empty and corresponds to an allowed mime type (`video/mp4`, `video/x-matroska`,
-   `video/quicktime`).
-2. **MinIO Persistence**: The file is stored in the `originals` bucket using
-   a randomly generated UUID as the filename.
-3. **Queue Dispatching**: A JSON message containing the video ID and filename
-   is sent to the `video.processing` queue.
-4. **Task Acquisition**: The worker consumes the task, updates the database
-   status to `PROCESSING`, and downloads the file to an isolated local workspace.
-5. **Transcoding**: FFmpeg encodes the video file into segmented HLS streams at
-   multiple bitrates.
-6. **Metadata Parsing & Thumbnailing**: FFprobe extracts media dimensions,
-   durations, and codecs. FFmpeg captures the poster thumbnail.
-7. **Storage Sync**: The segments, playlists, and thumbnail are uploaded to the
-   `processed` bucket under a directory prefixed with the video UUID.
-8. **Finalization**: Local workspace files are deleted, and the PostgreSQL
-   record is updated to `COMPLETED` along with the extracted metadata.
 
 ## Authentication & Authorization
 
-Securing the platform relies on token-based authentication and method-level
-security:
+The following diagram shows the authentication and authorization flow.
 
 <p align="center">
-  <img src="docs/images/authentication_flow.png" width="900">
+  <img src="docs/images/authentication_flow.png" width="750">
 </p>
-
-* **User Registration & Login**: Users create accounts with BCrypt-hashed
-  passwords. A successful login returns a JWT containing the user's username and
-  signature.
-* **Request Filtering**: The application intercepts incoming requests using a
-  custom security filter. It extracts the JWT from the `Authorization: Bearer <token>`
-  header, validates its signature, and establishes a security context.
-* **Ownership Checks**: Endpoints that modify state retrieve the target record
-  from PostgreSQL and verify that the authenticated user ID matches the owner
-  ID associated with the video.
 
 ## Database Design
 
-The relational database schema is designed around two main tables:
+The following diagram represents the relationship between the application's core entities.
 
 <p align="center">
-  <img src="docs/images/database_er_diagram.png" width="900">
+  <img src="docs/images/database_er_diagram.png" width="750">
 </p>
-
-* **users**: Stores the unique identifier, username, email, encrypted password
-  hash, and timestamps.
-* **videos**: Stores the video ID, original filename, file size, content type,
-  processing status, title, description, uploaded timestamp, and technical
-  attributes (duration, height, width, codecs). A foreign key binds each video
-  to a specific record in the `users` table.
 
 ## Deployment Architecture
 
-The database, message broker, and storage services are defined as containerized
-services, establishing separate networks:
+The following diagram illustrates how the application and supporting services are deployed.
 
 <p align="center">
-  <img src="docs/images/deployment_diagram.png" width="900">
+  <img src="docs/images/deployment_diagram.png" width="750">
 </p>
-
-* **postgres**: Relational database container exposing port `5432` with a
-  persistent volume mapping.
-* **rabbitmq**: Message broker running the management plugin on port `15672`
-  and AMQP protocol services on port `5672`.
-* **minio**: S3-compliant object storage server exposing API requests on port
-  `9000` and the management console on port `9001`.
-* **app**: The Spring Boot container, which connects to the database, broker,
-  and storage services.
 
 ## Technology Stack
 
@@ -255,6 +196,32 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 Once the application is running, open your web browser and navigate to the
 interactive API console to test the endpoints:
 [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+
+## Screenshots
+
+### Swagger UI
+
+<p align="center">
+<img src="docs/screenshots/swagger.png" width="850">
+</p>
+
+### RabbitMQ Management
+
+<p align="center">
+<img src="docs/screenshots/rabbitmq.png" width="850">
+</p>
+
+### MinIO Console
+
+<p align="center">
+<img src="docs/screenshots/minio.png" width="850">
+</p>
+
+### Video Streaming
+
+<p align="center">
+<img src="docs/screenshots/streaming.png" width="850">
+</p>
 
 ## Future Improvements
 
