@@ -33,7 +33,7 @@ Original uploads are saved to **MinIO** object storage. The upload triggers a me
 
 Here is the system architecture of **StreamForge**:
 
-![System Architecture](docs/images/architecture.png)
+<img src="docs/images/architecture.png" alt="System Architecture" width="650">
 
 The platform separates the upload API from processing workers, executing operations in sandboxed temporary spaces for strict resource isolation:
 
