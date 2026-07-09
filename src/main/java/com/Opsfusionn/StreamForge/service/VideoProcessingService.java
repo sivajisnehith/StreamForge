@@ -1,6 +1,7 @@
 package com.Opsfusionn.StreamForge.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,7 @@ public class VideoProcessingService {
     private final FFmpegService ffmpegService;
     private final FFProbeService ffProbeService;
     private final MasterPlaylistService masterPlaylistService;
+    private final MinioService minioService;
     
     private static final Logger logger = LoggerFactory.getLogger(VideoProcessingService.class);
 
@@ -39,11 +41,13 @@ public class VideoProcessingService {
     public VideoProcessingService(VideoRepository videoRepository, 
                                   FFmpegService ffmpegService, 
                                   FFProbeService ffProbeService,
-                                  MasterPlaylistService masterPlaylistService) {
+                                  MasterPlaylistService masterPlaylistService,
+                                  MinioService minioService) {
         this.videoRepository = videoRepository;
         this.ffmpegService = ffmpegService;
         this.ffProbeService = ffProbeService;
         this.masterPlaylistService = masterPlaylistService;
+        this.minioService = minioService;
     }
 
     /**
@@ -69,36 +73,69 @@ public class VideoProcessingService {
         Path inputFile = Paths.get(uploadDir, message.getStoredFileName());
         Path outputDirectory = Paths.get(processedDir, video.getId().toString());
         Files.createDirectories(outputDirectory);
-        
-        // 1. Generate Renditions
-        ffmpegService.generateHls(inputFile, outputDirectory);
-
-        // 2. Generate Master Playlist
-        masterPlaylistService.generateMasterPlaylist(outputDirectory);
-
-        // 3. Generate Thumbnail
-        ffmpegService.generateThumbnail(inputFile, outputDirectory);
-
-        Path outputFile = outputDirectory.resolve("master.m3u8");
-        if (!Files.exists(outputFile)) {
-            throw new IOException("HLS master playlist file (master.m3u8) was not created.");
+        if (inputFile.getParent() != null) {
+            Files.createDirectories(inputFile.getParent());
         }
 
-        // 4. Extract Metadata
-        logger.info("Extracting metadata for video {}", video.getId());
-        VideoMetadata metadata = ffProbeService.extractMetadata(inputFile);
+        try {
+            // Download original file from MinIO
+            logger.info("Downloading original file {} from MinIO", message.getStoredFileName());
+            try (InputStream in = minioService.getOriginalObject(message.getStoredFileName())) {
+                Files.copy(in, inputFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
 
-        // 5. Persist Metadata
-        video.setDuration(metadata.getDuration());
-        video.setWidth(metadata.getWidth());
-        video.setHeight(metadata.getHeight());
-        video.setVideoCodec(metadata.getVideoCodec());
-        video.setAudioCodec(metadata.getAudioCodec());
-        video.setBitRate(metadata.getBitRate());
+            // 1. Generate Renditions
+            ffmpegService.generateHls(inputFile, outputDirectory);
 
-        // 6. Save Video and Update status to COMPLETED
-        video.setStatus(VideoStatus.COMPLETED);
-        videoRepository.save(video);
-        logger.info("Video {} status updated to COMPLETED with metadata", video.getId());
+            // 2. Generate Master Playlist
+            masterPlaylistService.generateMasterPlaylist(outputDirectory);
+
+            // 3. Generate Thumbnail
+            ffmpegService.generateThumbnail(inputFile, outputDirectory);
+
+            Path outputFile = outputDirectory.resolve("master.m3u8");
+            if (!Files.exists(outputFile)) {
+                throw new IOException("HLS master playlist file (master.m3u8) was not created.");
+            }
+
+            // 4. Extract Metadata
+            logger.info("Extracting metadata for video {}", video.getId());
+            VideoMetadata metadata = ffProbeService.extractMetadata(inputFile);
+
+            // 5. Upload processed HLS files to MinIO
+            logger.info("Uploading processed HLS files to MinIO for video {}", video.getId());
+            try (var walkStream = Files.walk(outputDirectory)) {
+                walkStream.filter(Files::isRegularFile).forEach(path -> {
+                    String relativePath = outputDirectory.relativize(path).toString();
+                    minioService.uploadProcessedFile(video.getId(), relativePath, path);
+                });
+            }
+
+            // 6. Persist Metadata
+            video.setDuration(metadata.getDuration());
+            video.setWidth(metadata.getWidth());
+            video.setHeight(metadata.getHeight());
+            video.setVideoCodec(metadata.getVideoCodec());
+            video.setAudioCodec(metadata.getAudioCodec());
+            video.setBitRate(metadata.getBitRate());
+
+            // 7. Save Video and Update status to COMPLETED
+            video.setStatus(VideoStatus.COMPLETED);
+            videoRepository.save(video);
+            logger.info("Video {} status updated to COMPLETED with metadata", video.getId());
+        } finally {
+            // Clean up temporary local files
+            Files.deleteIfExists(inputFile);
+            if (Files.exists(outputDirectory)) {
+                try (var walkStream = Files.walk(outputDirectory)) {
+                    walkStream.sorted(java.util.Comparator.reverseOrder())
+                            .forEach(path -> {
+                                try {
+                                    Files.delete(path);
+                                } catch (IOException ignored) {}
+                            });
+                } catch (IOException ignored) {}
+            }
+        }
     }
 }

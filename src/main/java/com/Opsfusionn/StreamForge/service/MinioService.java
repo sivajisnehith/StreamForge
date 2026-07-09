@@ -40,6 +40,31 @@ public class MinioService {
         }
     }
 
+    public InputStream getOriginalObject(String objectName) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(originalBucket)
+                            .object(objectName)
+                            .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve original object from MinIO.", e);
+        }
+    }
+
+    public void uploadProcessedFile(UUID videoId, String relativePath, Path filePath) {
+        try {
+            minioClient.uploadObject(
+                    UploadObjectArgs.builder()
+                            .bucket(processedBucket)
+                            .object(videoId.toString() + "/" + relativePath.replace("\\", "/"))
+                            .filename(filePath.toString())
+                            .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload processed file to MinIO: " + relativePath, e);
+        }
+    }
+
     //To basically retrieve the required video
     public InputStream getProcessedObject(UUID videoId,String objectName){
         try {

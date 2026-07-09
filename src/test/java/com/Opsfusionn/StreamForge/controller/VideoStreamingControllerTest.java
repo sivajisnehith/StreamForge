@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -24,6 +25,7 @@ import com.Opsfusionn.StreamForge.service.MinioService;
 
 @WebMvcTest(VideoStreamingController.class)
 @Import(GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class VideoStreamingControllerTest {
 
     @Autowired
@@ -31,6 +33,12 @@ public class VideoStreamingControllerTest {
 
     @MockitoBean
     private MinioService minioService;
+
+    @MockitoBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private com.Opsfusionn.StreamForge.service.JwtService jwtService;
 
     @Test
     public void testStreamMasterPlaylist_Success() throws Exception {
