@@ -223,6 +223,8 @@ interactive API console to test the endpoints:
 <img src="docs/screenshots/streaming-2.png" width="850">
 </p>
 
+### Console Output
+
 <p align="center">
 <img src="docs/screenshots/streaming-1.png" width="400">
 </p>
