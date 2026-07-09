@@ -27,7 +27,7 @@ and video properties.
 The following diagram shows the overall architecture of StreamForge.
 
 <p align="center">
-  <img src="docs/images/architecture.png" width="750">
+  <img src="docs/images/architecture.png" width="550">
 </p>
 
 ## Key Features
