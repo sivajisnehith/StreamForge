@@ -100,6 +100,14 @@ The platform separates the upload API from processing workers, executing operati
 
 ---
 
+## 📊 Database ER Diagram
+
+Here is the database entity-relationship (ER) diagram representing the metadata storage system for StreamForge:
+
+<img src="docs/images/database_er_diagram.png" alt="Database ER Diagram" width="650">
+
+---
+
 ## 🔒 Authentication Flow
 
 Here is the secure authentication and authorization flow of **StreamForge**:
@@ -172,6 +180,14 @@ StreamForge
 *   `PROCESSING`: FFmpeg is actively transcoding segments, generating HLS manifests, and capturing thumbnails.
 *   `COMPLETED`: The transcoded streams are successfully uploaded to the MinIO `processed` bucket, metadata is persisted, and local temp workspaces are cleaned.
 *   `FAILED`: An exception occurred during transcoding or networking; status is updated by the global error handler.
+
+---
+
+## 📦 Deployment Topology
+
+Here is the deployment and orchestration diagram for the StreamForge cluster:
+
+<img src="docs/images/deployment_diagram.png" alt="Deployment Diagram" width="650">
 
 ---
 
