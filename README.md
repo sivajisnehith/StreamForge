@@ -220,7 +220,11 @@ interactive API console to test the endpoints:
 ### Video Streaming
 
 <p align="center">
-<img src="docs/screenshots/streaming.png" width="850">
+<img src="docs/screenshots/streaming-1.png" width="850">
+</p>
+
+<p align="center">
+<img src="docs/screenshots/streaming-2.png" width="850">
 </p>
 
 ## Future Improvements
