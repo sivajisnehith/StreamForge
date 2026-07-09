@@ -35,6 +35,10 @@ Here is the system architecture of **StreamForge**:
 
 <img src="docs/images/architecture.png" alt="System Architecture" width="650">
 
+Here is the video processing pipeline flow:
+
+<img src="docs/images/pipeline.png" alt="Video Processing Pipeline" width="650">
+
 The platform separates the upload API from processing workers, executing operations in sandboxed temporary spaces for strict resource isolation:
 
 ```
