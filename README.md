@@ -65,7 +65,7 @@ The following diagram shows the overall architecture of StreamForge.
 The following diagram illustrates how an uploaded video moves through the processing pipeline.
 
 <p align="center">
-  <img src="docs/images/pipeline.png" width="400">
+  <img src="docs/images/pipeline.png" width="750">
 </p>
 
 ## Authentication & Authorization
@@ -73,7 +73,7 @@ The following diagram illustrates how an uploaded video moves through the proces
 The following diagram shows the authentication and authorization flow.
 
 <p align="center">
-  <img src="docs/images/authentication_flow.png" width="400">
+  <img src="docs/images/authentication_flow.png" width="750">
 </p>
 
 ## Database Design
