@@ -1,10 +1,5 @@
 # StreamForge
 
-StreamForge is a distributed video processing backend that handles asynchronous
-HLS transcoding, metadata extraction, and streaming.
-
-## Project Overview
-
 StreamForge is designed to handle video ingestion and streaming. Instead of
 performing resource-intensive video transcoding synchronously within the HTTP
 request thread, the application decouples the upload lifecycle from the
