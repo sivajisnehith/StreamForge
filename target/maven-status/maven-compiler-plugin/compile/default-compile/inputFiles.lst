@@ -1,5 +1,6 @@
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\MinioConfig.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\RabbitMQConfig.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\SecurityConfig.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\config\VideoRenditions.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\FileUploadController.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\controller\MinioTestController.java
@@ -9,6 +10,8 @@ C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamFor
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeFormat.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeResponse.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\ffprobe\FFprobeStream.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\LoginRequest.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\RegisterRequest.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\UpdateVideoStatusRequest.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\UploadResponse.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\dto\VideoMetadata.java
@@ -21,10 +24,13 @@ C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamFor
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\messaging\VideoProcessingErrorHandler.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\messaging\VideoProcessingMessage.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\messaging\VideoProcessingProducer.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\User.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\Video.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\VideoRendition.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\model\VideoStatus.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\repository\UserRepository.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\repository\VideoRepository.java
+C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\AuthService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFmpegService.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFprobeMapper.java
 C:\Users\ALPHA_JUNIOR\Desktop\StreamForge\src\main\java\com\Opsfusionn\StreamForge\service\FFProbeService.java
