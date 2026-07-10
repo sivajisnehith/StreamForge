@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreamForge — Authenticate Platform Key</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --bg: #07090c;
+    --bg-alt: #0a0d11;
+    --surface: #10141b;
+    --surface-2: #171d26;
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.12);
+    --ember: #ff6a28;
+    --ember-dim: #a8461a;
+    --ember-glow: rgba(255,106,40,0.25);
+    --signal: #34d1c4;
+    --signal-dim: #1f7d76;
+    --signal-glow: rgba(52,209,196,0.15);
+    --text: #f0f3f6;
+    --text-dim: #a2aebf;
+    --text-faint: #636e7f;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    overflow: hidden;
+    height: 100vh;
+  }
+  a{ color: inherit; text-decoration: none; }
+
+  .split-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ---------- LEFT SIDE: FORM ---------- */
+  .auth-left {
+    width: 520px;
+    flex-shrink: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto;
+  }
+
+  .nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+  .logo {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 24px; height: 24px;
+    filter: drop-shadow(0 2px 8px rgba(255, 106, 40, 0.4));
+  }
+  .logo-mark svg { width: 100%; height: 100%; }
+
+  .btn-back {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    transition: color 0.2s;
+  }
+  .btn-back:hover {
+    color: var(--text-dim);
+  }
+
+  /* Frosted card container styling */
+  .auth-card-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  .auth-card {
+    background: rgba(16, 20, 27, 0.45);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 44px 40px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .card-header {
+    margin-bottom: 32px;
+  }
+  .card-title {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .card-subtitle {
+    font-size: 14.5px;
+    color: var(--text-dim);
+  }
+
+  /* Form inputs styling */
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+  .form-group input {
+    width: 100%;
+    background: rgba(7, 9, 12, 0.5);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-family: var(--body);
+    font-size: 14.5px;
+    color: var(--text);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--ember);
+    box-shadow: 0 0 0 3px rgba(255, 106, 40, 0.15);
+    background: rgba(7, 9, 12, 0.7);
+  }
+  .form-group input::placeholder {
+    color: rgba(255,255,255,0.25);
+  }
+
+  /* Password toggle */
+  .password-wrapper {
+    position: relative;
+  }
+  .password-wrapper input {
+    padding-right: 48px;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  .password-toggle:hover {
+    color: var(--text-dim);
+  }
+
+  /* Dynamic sliding input groups */
+  .confirm-password-group, .username-group {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-bottom: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .confirm-password-group.show, .username-group.show {
+    max-height: 90px;
+    opacity: 1;
+    margin-bottom: 20px;
+  }
+
+  /* Magnetic Submit Button */
+  .submit-btn-container {
+    position: relative;
+    margin-top: 28px;
+    margin-bottom: 20px;
+  }
+  .btn-submit {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 0;
+    background: var(--ember);
+    color: #07090c;
+    border: 1px solid var(--ember);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    z-index: 10;
+  }
+  .btn-submit:hover {
+    background: #ff7d42;
+    border-color: #ff7d42;
+    box-shadow: 0 8px 24px rgba(255, 106, 40, 0.25);
+  }
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Toggle link */
+  .toggle-mode-wrapper {
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--text-dim);
+  }
+  .toggle-mode-link {
+    color: var(--ember);
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .toggle-mode-link:hover {
+    color: #ff7d42;
+  }
+
+  /* Response status logs */
+  .status-log {
+    margin-top: 20px;
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: none;
+  }
+  .status-log.success {
+    display: block;
+    background: rgba(52, 209, 196, 0.08);
+    border: 1px solid rgba(52, 209, 196, 0.2);
+    color: var(--signal);
+  }
+  .status-log.error {
+    display: block;
+    background: rgba(255, 95, 86, 0.08);
+    border: 1px solid rgba(255, 95, 86, 0.2);
+    color: #ff5f56;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(7, 9, 12, 0.25);
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Footer copyrights */
+  .footer-copyright {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  /* ---------- RIGHT SIDE: 3D PIPELINE VISUALIZATION ---------- */
+  .auth-right {
+    flex-grow: 1;
+    position: relative;
+    background: #040609;
+    overflow: hidden;
+    border-left: 1px solid var(--border);
+  }
+  .pipeline-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .pipeline-labels-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .pipeline-label {
+    position: absolute;
+    background: rgba(10, 14, 21, 0.85);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    transform: translate(-50%, -100%);
+    pointer-events: none;
+  }
+  .pipeline-label::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 8px var(--signal);
+  }
+  .pipeline-label.active::before {
+    background: var(--ember);
+    box-shadow: 0 0 8px var(--ember);
+  }
+
+  /* Side Floating Aurora Orbs */
+  .right-aurora-1 {
+    position: absolute;
+    top: -10%; right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255, 106, 40, 0.05) 0%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+  .right-aurora-2 {
+    position: absolute;
+    bottom: -10%; left: 10%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(52, 209, 196, 0.04) 0%, transparent 70%);
+    filter: blur(50px);
+    pointer-events: none;
+  }
+
+  /* Responsive stack */
+  @media (max-width: 1024px) {
+    .auth-left {
+      width: 100%;
+    }
+    .auth-right {
+      display: none;
+    }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="split-container">
+  
+  <!-- Left Side Panel (frosted card & credentials) -->
+  <section class="auth-left">
+    <div class="nav-header">
+      <div class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 12h5v10l8-10h-5V2z" fill="#ff6a28"/></svg>
+        </span>
+        <a href="index.html">StreamForge</a>
+      </div>
+      <a href="index.html" class="btn-back">← Back to site</a>
+    </div>
+
+    <div class="auth-card-wrapper">
+      <div class="auth-card">
+        <div class="card-header">
+          <h1 class="card-title" id="form-title">Access Platform</h1>
+          <p class="card-subtitle" id="form-subtitle">Authenticate with credentials</p>
+        </div>
+
+        <form id="auth-form">
+          
+          <div class="form-group username-group" id="username-group">
+            <label for="username">User Identity</label>
+            <input type="text" id="username" placeholder="Enter username" autocomplete="off" minlength="3">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="name@domain.com" required autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" placeholder="••••••••" required minlength="6">
+              <button type="button" class="password-toggle" id="toggle-pwd" aria-label="Toggle password visibility">
+                <svg height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group confirm-password-group" id="confirm-pwd-group">
+            <label for="confirm-password">Confirm Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="confirm-password" placeholder="••••••••" minlength="6">
+            </div>
+          </div>
+
+          <div class="submit-btn-container">
+            <button type="submit" class="btn-submit" id="submit-btn">
+              <span class="btn-content">
+                <span class="spinner" id="btn-spinner"></span>
+                <span id="btn-text">Authenticate Session</span>
+              </span>
+            </button>
+          </div>
+
+          <div class="toggle-mode-wrapper">
+            <span id="toggle-label">New to StreamForge? </span>
+            <span class="toggle-mode-link" id="toggle-mode-btn">Create an account</span>
+          </div>
+
+          <div class="status-log" id="status-display"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-copyright">
+      © 2026 StreamForge Inc. All keys secured.
+    </div>
+  </section>
+
+  <!-- Right Side Panel (3D Three.js Pipeline) -->
+  <section class="auth-right">
+    <div class="right-aurora-1"></div>
+    <div class="right-aurora-2"></div>
+    
+    <canvas class="pipeline-canvas" id="pipeline-canvas"></canvas>
+    
+    <div class="pipeline-labels-container" id="labels-container">
+      <!-- Projective HTML labels generated dynamically -->
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // ---------- AUTH CONFIG & API INTEGRATION ----------
+  const API_BASE = window.location.origin.includes('localhost:8080') ? '' : 'http://localhost:8080';
+
+  const formTitle = document.getElementById('form-title');
+  const formSubtitle = document.getElementById('form-subtitle');
+  const usernameGroup = document.getElementById('username-group');
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  const confirmPwdGroup = document.getElementById('confirm-pwd-group');
+  const confirmPwdInput = document.getElementById('confirm-password');
+  const authForm = document.getElementById('auth-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const btnText = document.getElementById('btn-text');
+  const btnSpinner = document.getElementById('btn-spinner');
+  const statusDisplay = document.getElementById('status-display');
+  const passwordInput = document.getElementById('password');
+  const togglePwdBtn = document.getElementById('toggle-pwd');
+  const toggleModeBtn = document.getElementById('toggle-mode-btn');
+  const toggleLabel = document.getElementById('toggle-label');
+
+  let mode = 'login'; // 'login' or 'register'
+
+  // Toggle Login/Register Mode
+  toggleModeBtn.addEventListener('click', () => {
+    statusDisplay.style.display = 'none';
+    
+    if (mode === 'login') {
+      mode = 'register';
+      formTitle.textContent = 'Create Account';
+      formSubtitle.textContent = 'Register creator credentials';
+      
+      usernameGroup.classList.add('show');
+      usernameInput.setAttribute('required', '');
+      confirmPwdGroup.classList.add('show');
+      confirmPwdInput.setAttribute('required', '');
+      
+      btnText.textContent = 'Create Credentials';
+      toggleLabel.textContent = 'Already have an account? ';
+      toggleModeBtn.textContent = 'Sign In';
+    } else {
+      mode = 'login';
+      formTitle.textContent = 'Access Platform';
+      formSubtitle.textContent = 'Authenticate with credentials';
+      
+      usernameGroup.classList.remove('show');
+      usernameInput.removeAttribute('required');
+      confirmPwdGroup.classList.remove('show');
+      confirmPwdInput.removeAttribute('required');
+      
+      btnText.textContent = 'Authenticate Session';
+      toggleLabel.textContent = 'New to StreamForge? ';
+      toggleModeBtn.textContent = 'Create an account';
+    }
+  });
+
+  // Password Visibility Toggle
+  let pwdVisible = false;
+  togglePwdBtn.addEventListener('click', () => {
+    pwdVisible = !pwdVisible;
+    if (pwdVisible) {
+      passwordInput.type = 'text';
+      confirmPwdInput.type = 'text';
+      togglePwdBtn.innerHTML = '<svg height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+    } else {
+      passwordInput.type = 'password';
+      confirmPwdInput.type = 'password';
+      togglePwdBtn.innerHTML = '<svg height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+  });
+
+  // Magnetic Button Effect
+  submitBtn.addEventListener('mousemove', (e) => {
+    const rect = submitBtn.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    submitBtn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+    const inner = submitBtn.querySelector('.btn-content');
+    if (inner) {
+      inner.style.transform = `translate(${x * 0.08}px, ${y * 0.08}px)`;
+    }
+  });
+
+  submitBtn.addEventListener('mouseleave', () => {
+    submitBtn.style.transform = 'translate(0px, 0px)';
+    const inner = submitBtn.querySelector('.btn-content');
+    if (inner) {
+      inner.style.transform = 'translate(0px, 0px)';
+    }
+  });
+
+  // Handle Form Submission (Fetch API)
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusDisplay.className = 'status-log';
+    statusDisplay.style.display = 'none';
+
+    if (mode === 'register' && passwordInput.value !== confirmPwdInput.value) {
+      statusDisplay.classList.add('error');
+      statusDisplay.textContent = 'Error: Passwords do not match.';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    btnSpinner.style.display = 'inline-block';
+
+    try {
+      const url = `${API_BASE}/api/auth/${mode}`;
+      const payload = mode === 'login'
+        ? { email: emailInput.value, password: passwordInput.value }
+        : { username: usernameInput.value, email: emailInput.value, password: passwordInput.value };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors && Array.isArray(data.errors)) {
+          throw new Error(data.errors.join(', '));
+        }
+        throw new Error(data.message || 'Authentication failed.');
+      }
+
+      if (mode === 'login') {
+        localStorage.setItem('token', data.accessToken);
+        statusDisplay.classList.add('success');
+        statusDisplay.textContent = 'Authentication successful! Redirecting...';
+        setTimeout(() => {
+          window.location.href = 'http://localhost:3000/dashboard';
+        }, 1000);
+      } else {
+        statusDisplay.classList.add('success');
+        statusDisplay.textContent = 'Account created successfully! Please sign in.';
+        setTimeout(() => {
+          toggleModeBtn.click(); // switch back to login mode
+          passwordInput.value = '';
+          confirmPwdInput.value = '';
+        }, 1500);
+      }
+    } catch (err) {
+      statusDisplay.classList.add('error');
+      statusDisplay.textContent = `Error: ${err.message}`;
+    } finally {
+      submitBtn.disabled = false;
+      btnSpinner.style.display = 'none';
+    }
+  });
+
+  // ---------- THREE.JS 3D PIPELINE VISUALIZATION ----------
+  (function init3DPipeline() {
+    const canvas = document.getElementById('pipeline-canvas');
+    const container = document.getElementById('labels-container');
+    if (!canvas) return;
+
+    // Scene setups
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x040609, 0.08);
+
+    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+    camera.position.set(0, 0, 10);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+    // Grid backdrop helper
+    const gridHelper = new THREE.GridHelper(20, 20, 0xff6a28, 0x1f7d76);
+    gridHelper.position.y = -2.2;
+    gridHelper.material.opacity = 0.45;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // Light setups
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+
+    const pointLight1 = new THREE.PointLight(0xff6a28, 2, 20);
+    pointLight1.position.set(5, 5, 5);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x34d1c4, 1.5, 20);
+    pointLight2.position.set(-5, -5, 5);
+    scene.add(pointLight2);
+
+    // Pipeline node details
+    const pipelineData = [
+      { name: 'Upload Source', desc: 'Raw video stream ingestion', x: -4, y: 1.5, color: 0xff6a28 },
+      { name: 'RabbitMQ', desc: 'Asynchronous task broker', x: -2, y: -0.8, color: 0x34d1c4 },
+      { name: 'FFmpeg Workers', desc: 'Distributed HLS transcoding', x: 0, y: 1.5, color: 0xff6a28 },
+      { name: 'MinIO Storage', desc: 'Adaptive chunk persistence', x: 2, y: -0.8, color: 0x34d1c4 },
+      { name: 'HLS Delivery', desc: 'Multi-resolution streaming', x: 4, y: 1.5, color: 0xff6a28 }
+    ];
+
+    const nodes = [];
+    const nodeGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+
+    // Build 3D nodes & label mappings
+    pipelineData.forEach((data, index) => {
+      const material = new THREE.MeshPhongMaterial({
+        color: data.color,
+        emissive: data.color,
+        emissiveIntensity: 0.8,
+        shininess: 30
+      });
+      const mesh = new THREE.Mesh(nodeGeometry, material);
+      mesh.position.set(data.x, data.y, 0);
+      scene.add(mesh);
+
+      // Create outer glow ring mesh
+      const ringGeom = new THREE.RingGeometry(0.35, 0.45, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: data.color, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+      const ring = new THREE.Mesh(ringGeom, ringMat);
+      ring.position.copy(mesh.position);
+      scene.add(ring);
+
+      // Generate HTML label overlay
+      const label = document.createElement('div');
+      label.className = `pipeline-label ${index === 0 ? 'active' : ''}`;
+      label.innerHTML = `
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-weight:600; color:var(--text);">${data.name}</span>
+          <span style="font-size:9px; color:var(--text-faint); margin-top:2px;">${data.desc}</span>
+        </div>
+      `;
+      container.appendChild(label);
+
+      nodes.push({ mesh, labelEl: label, ring, pulseSpeed: 1 + Math.random() });
+    });
+
+    // Draw connection lines
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x34d1c4, transparent: true, opacity: 0.85 });
+    const linePoints = [];
+    nodes.forEach(n => linePoints.push(n.mesh.position));
+    const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints);
+    const line = new THREE.Line(lineGeom, lineMaterial);
+    scene.add(line);
+
+    // Active flowing packet particles
+    const packets = [];
+    const packetGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+
+    function createPacket() {
+      const isEmber = Math.random() > 0.5;
+      const color = isEmber ? 0xff6a28 : 0x34d1c4;
+      
+      const packetMaterial = new THREE.MeshBasicMaterial({ color: color });
+      const mesh = new THREE.Mesh(packetGeometry, packetMaterial);
+      mesh.position.copy(nodes[0].mesh.position);
+      
+      // Add local glow light to the packet
+      const packetLight = new THREE.PointLight(color, 1.8, 3);
+      mesh.add(packetLight);
+      
+      scene.add(mesh);
+      packets.push({
+        mesh,
+        segment: 0,
+        t: 0,
+        speed: 0.008 + Math.random() * 0.006
+      });
+    }
+
+    // Spawn initial packets
+    createPacket();
+    setInterval(() => {
+      if (packets.length < 5) createPacket();
+    }, 2500);
+
+    // Handle viewport resizing
+    function onResize() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+      
+      // Scaling positions for mobile
+      const scale = width < 600 ? 0.6 : (width < 900 ? 0.8 : 1);
+      nodes.forEach((node, i) => {
+        node.mesh.position.set(pipelineData[i].x * scale, pipelineData[i].y * scale, 0);
+        node.ring.position.copy(node.mesh.position);
+      });
+    }
+    window.addEventListener('resize', onResize);
+    onResize();
+
+    // 3D projections temp vector
+    const tempV = new THREE.Vector3();
+
+    // Animation Loop
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      const sec = time * 0.001;
+
+      // Animate nodes pulsing glows
+      nodes.forEach(node => {
+        const pulse = 1 + Math.sin(sec * 4 * node.pulseSpeed) * 0.2;
+        node.ring.scale.set(pulse, pulse, 1);
+        node.mesh.rotation.y += 0.01;
+      });
+
+      // Animate packet paths
+      for (let i = packets.length - 1; i >= 0; i--) {
+        const p = packets[i];
+        p.t += p.speed;
+
+        const startNode = nodes[p.segment].mesh.position;
+        const endNode = nodes[p.segment + 1].mesh.position;
+
+        // Linear interpolation along paths
+        p.mesh.position.lerpVectors(startNode, endNode, p.t);
+
+        // Segment transitions
+        if (p.t >= 1) {
+          p.t = 0;
+          p.segment++;
+
+          // Trigger active status label glows
+          nodes.forEach((n, idx) => {
+            if (idx === p.segment) {
+              n.labelEl.classList.add('active');
+            } else {
+              n.labelEl.classList.remove('active');
+            }
+          });
+
+          // Restart packet if path completes
+          if (p.segment >= nodes.length - 1) {
+            p.segment = 0;
+            p.mesh.position.copy(nodes[0].mesh.position);
+          }
+        }
+      }
+
+      // Render overlay labels following 3D points
+      nodes.forEach(node => {
+        tempV.copy(node.mesh.position);
+        tempV.project(camera);
+
+        const x = (tempV.x * 0.5 + 0.5) * canvas.clientWidth;
+        const y = (tempV.y * -0.5 + 0.5) * canvas.clientHeight;
+
+        node.labelEl.style.left = `${x}px`;
+        node.labelEl.style.top = `${y - 12}px`;
+      });
+
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(animate);
+
+  })();
+
+</script>
+</body>
+</html>

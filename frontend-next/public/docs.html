@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreamForge — Developer Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Root variables matching index.html */
+  :root{
+    --bg: #07090c;
+    --bg-alt: #0a0d11;
+    --surface: #10141b;
+    --surface-2: #171d26;
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.12);
+    --ember: #ff6a28;
+    --ember-dim: #a8461a;
+    --ember-glow: rgba(255,106,40,0.2);
+    --signal: #34d1c4;
+    --signal-dim: #1f7d76;
+    --signal-glow: rgba(52,209,196,0.15);
+    --text: #f0f3f6;
+    --text-dim: #a2aebf;
+    --text-faint: #636e7f;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  a{ color: inherit; text-decoration: none; }
+  img,canvas{ display:block; max-width:100%; }
+
+  ::selection{ background: var(--ember); color: #0a0c0f; }
+
+  /* Fluid wrap layout with enhanced side margins */
+  .wrap{
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  @media (max-width: 480px) {
+    .wrap {
+      padding: 0 24px;
+    }
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    background: rgba(7, 9, 12, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner{
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 20px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  @media (max-width: 768px) {
+    .nav-inner {
+      padding: 16px 32px;
+    }
+  }
+  @media (max-width: 480px) {
+    .nav-inner {
+      padding: 16px 24px;
+    }
+  }
+  .logo{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    user-select: none;
+  }
+  .logo-mark{
+    width: 24px; height:24px;
+    position:relative;
+    flex-shrink:0;
+    filter: drop-shadow(0 2px 8px rgba(255, 106, 40, 0.4));
+  }
+  .logo-mark svg{ width:100%; height:100%; }
+  
+  .nav-cta{
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space:nowrap;
+  }
+  .nav-cta:hover{
+    border-color: var(--ember);
+    background: var(--ember-glow);
+    box-shadow: 0 4px 20px rgba(255, 106, 40, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- DOCS CONTAINER ---------- */
+  .docs-container {
+    display: flex;
+    max-width: 1240px;
+    margin: 80px auto 0;
+    padding: 40px 32px;
+    gap: 48px;
+  }
+  .docs-sidebar {
+    width: 240px;
+    position: sticky;
+    top: 120px;
+    height: calc(100vh - 160px);
+    overflow-y: auto;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding-right: 24px;
+  }
+  .docs-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .docs-sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 4px;
+  }
+  .sidebar-section {
+    margin-bottom: 28px;
+  }
+  .sidebar-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+  .sidebar-link {
+    display: block;
+    font-size: 14.5px;
+    color: var(--text-dim);
+    padding: 6px 0;
+    transition: color 0.2s ease;
+  }
+  .sidebar-link:hover, .sidebar-link.active {
+    color: var(--ember);
+  }
+
+  .docs-content {
+    flex-grow: 1;
+    max-width: calc(100% - 288px);
+  }
+  .docs-section {
+    padding-bottom: 56px;
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .docs-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  /* Typography */
+  h1.doc-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  h2.doc-subtitle {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    margin: 40px 0 16px;
+  }
+  h3.doc-heading {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 18px;
+    margin: 28px 0 12px;
+  }
+  p.doc-p {
+    color: var(--text-dim);
+    font-size: 16px;
+    line-height: 1.75;
+    margin-bottom: 20px;
+  }
+  
+  /* Callout box */
+  .callout {
+    background: rgba(52,209,196,0.03);
+    border: 1px solid rgba(52,209,196,0.15);
+    border-left: 3px solid var(--signal);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 24px 0;
+  }
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--signal);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .callout p {
+    color: var(--text-dim);
+    font-size: 14.5px;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* Code Block styling */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  pre::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--ember) 0%, var(--signal) 100%);
+    opacity: 0.3;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  :not(pre) > code {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* API Endpoint label tag */
+  .endpoint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .method {
+    padding: 3px 8px;
+    border-radius: 3px;
+    color: #07090c;
+    text-transform: uppercase;
+  }
+  .method.post { background: var(--ember); }
+  .method.get { background: var(--signal); }
+  .method.delete { background: #ff5f56; }
+  .path {
+    color: var(--text);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 14.5px;
+  }
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-family: var(--display);
+    font-weight: 600;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.01);
+  }
+  td {
+    color: var(--text-dim);
+  }
+  tr:hover td {
+    color: var(--text);
+  }
+
+  @media (max-width: 860px) {
+    .docs-container {
+      flex-direction: column;
+      padding: 24px;
+      gap: 32px;
+    }
+    .docs-sidebar {
+      width: 100%;
+      height: auto;
+      position: relative;
+      top: 0;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding-right: 0;
+      padding-bottom: 20px;
+    }
+    .docs-content {
+      max-width: 100%;
+    }
+  }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+    background: var(--bg);
+  }
+  .footer-inner{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap: 20px;
+  }
+  .footer-copy{
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+  .footer-links{
+    display:flex;
+    gap: 32px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+  }
+  .footer-links a{
+    transition: color .2s;
+  }
+  .footer-links a:hover{
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 12h5v10l8-10h-5V2z" fill="#ff6a28"/></svg>
+      </span>
+      <a href="index.html">StreamForge</a>
+    </div>
+    <a href="index.html" class="nav-cta">← Back to Site</a>
+  </div>
+</header>
+
+<div class="docs-container">
+  <aside class="docs-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Getting Started</div>
+      <a href="#introduction" class="sidebar-link active">Introduction</a>
+      <a href="#architecture" class="sidebar-link">Architecture Overview</a>
+      <a href="#quickstart" class="sidebar-link">Quickstart</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">API Reference</div>
+      <a href="#authentication" class="sidebar-link">Authentication</a>
+      <a href="#upload-video" class="sidebar-link">Upload Video</a>
+      <a href="#list-videos" class="sidebar-link">List Videos</a>
+      <a href="#get-video" class="sidebar-link">Get Video Metadata</a>
+      <a href="#delete-video" class="sidebar-link">Delete Video</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Integration</div>
+      <a href="#hls-player" class="sidebar-link">HLS Playback Guide</a>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <section id="introduction" class="docs-section">
+      <h1 class="doc-title">StreamForge Developer Documentation</h1>
+      <p class="doc-p">Welcome to the developer documentation for StreamForge. StreamForge is an enterprise-grade, asynchronous video ingestion and adaptive bitrate streaming (HLS) platform. It provides developers with endpoints to handle user authorization, seamless video uploads, metadata querying, and direct video streaming links.</p>
+      
+      <div class="callout">
+        <div class="callout-title">Architecture Philosophy</div>
+        <p>Instead of transcoding uploaded videos synchronously within the HTTP thread (which causes client timeouts), StreamForge writes files immediately to storage and offloads heavy media transcoding tasks to background workers via RabbitMQ.</p>
+      </div>
+    </section>
+
+    <section id="architecture" class="docs-section">
+      <h2 class="doc-subtitle">Architecture Overview</h2>
+      <p class="doc-p">StreamForge consists of several key building blocks collaborating asynchronously:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Technology</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>API Gateway</strong></td>
+            <td>Spring Boot (Java 21)</td>
+            <td>Exposes REST endpoints, validates payloads, enforces JWT security rules.</td>
+          </tr>
+          <tr>
+            <td><strong>Message Queue</strong></td>
+            <td>RabbitMQ</td>
+            <td>Coordinates and schedules transcoding events. Defers heavy loads.</td>
+          </tr>
+          <tr>
+            <td><strong>Object Storage</strong></td>
+            <td>MinIO (S3-compatible)</td>
+            <td>Stores raw uploads and generated multi-resolution HLS media segments.</td>
+          </tr>
+          <tr>
+            <td><strong>Metadata DB</strong></td>
+            <td>PostgreSQL</td>
+            <td>Persists creator accounts, video details, status tracks, and metrics.</td>
+          </tr>
+          <tr>
+            <td><strong>Media Engine</strong></td>
+            <td>FFmpeg / FFprobe</td>
+            <td>Transcodes inputs to HLS, extracts posters, and details codecs.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="quickstart" class="docs-section">
+      <h2 class="doc-subtitle">Quickstart</h2>
+      <p class="doc-p">Getting the local development environment and application running takes just one step since the entire architecture is completely dockerized:</p>
+      
+      <h3 class="doc-heading">1. Spin up the entire Docker network</h3>
+      <p class="doc-p">Build the StreamForge application container and start it alongside Postgres, RabbitMQ, and MinIO in a single command:</p>
+      <pre><code>docker-compose up --build -d</code></pre>
+      
+      <p class="doc-p">This command builds the StreamForge image from the local Dockerfile, configures networking, and links all services automatically. The API will be available locally at <code>http://localhost:8080</code>. You can access the interactive Swagger API sandbox at <code>http://localhost:8080/swagger-ui/index.html</code>.</p>
+    </section>
+
+    <section id="authentication" class="docs-section">
+      <h2 class="doc-subtitle">Authentication</h2>
+      <p class="doc-p">All video ingestion and mutation endpoints require a JSON Web Token (JWT) sent via the <code>Authorization</code> header.</p>
+      
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/auth/register</span>
+      </div>
+      <p class="doc-p">Register a new creator account.</p>
+      <pre><code>curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "creator1", "password": "secure_password"}'</code></pre>
+
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/auth/login</span>
+      </div>
+      <p class="doc-p">Authenticate credentials and retrieve a secure access token.</p>
+      <pre><code>curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "creator1", "password": "secure_password"}'</code></pre>
+      <p class="doc-p">Returns a JSON token payload:</p>
+      <pre><code>{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}</code></pre>
+    </section>
+
+    <section id="upload-video" class="docs-section">
+      <h2 class="doc-subtitle">Upload Video</h2>
+      <p class="doc-p">Upload a raw media file for asynchronous HLS processing.</p>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/videos/upload</span>
+      </div>
+      <p class="doc-p">Requires header: <code>Authorization: Bearer &lt;token&gt;</code> and <code>Content-Type: multipart/form-data</code>.</p>
+      
+      <h3 class="doc-heading">Request Parameters</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>file</code></td>
+            <td>Multipart File</td>
+            <td>The raw video file (max 150MB by default). Mimetypes validated.</td>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td>String</td>
+            <td>Video title (1 to 100 characters). Required.</td>
+          </tr>
+          <tr>
+            <td><code>description</code></td>
+            <td>String</td>
+            <td>Short description of video content. Optional.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code>curl -X POST http://localhost:8080/api/videos/upload \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -F "file=@demo_video.mp4" \
+  -F "title=Introduction Video" \
+  -F "description=Getting started guide"</code></pre>
+
+      <p class="doc-p">Returns HTTP code <code>202 Accepted</code>, indicating the ingestion started:</p>
+      <pre><code>{
+  "videoId": "8f3b23a1-7b0d-4ea3-8822-2a5490bc8201",
+  "status": "PROCESSING",
+  "message": "Video uploaded successfully. Transcoding started in the background."
+}</code></pre>
+    </section>
+
+    <section id="list-videos" class="docs-section">
+      <h2 class="doc-subtitle">List Videos</h2>
+      <p class="doc-p">Retrieve a paginated list of uploaded video records.</p>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/videos</span>
+      </div>
+      <h3 class="doc-heading">Query Parameters</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>page</code></td>
+            <td>Integer</td>
+            <td><code>0</code></td>
+            <td>Page number (0-indexed).</td>
+          </tr>
+          <tr>
+            <td><code>size</code></td>
+            <td>Integer</td>
+            <td><code>10</code></td>
+            <td>Number of records per page.</td>
+          </tr>
+          <tr>
+            <td><code>search</code></td>
+            <td>String</td>
+            <td><code>null</code></td>
+            <td>Case-insensitive title search keyword.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code>curl http://localhost:8080/api/videos?page=0&amp;size=5&amp;search=intro</code></pre>
+    </section>
+
+    <section id="get-video" class="docs-section">
+      <h2 class="doc-subtitle">Get Video Metadata</h2>
+      <p class="doc-p">Retrieve details, processing state, and HLS streaming URL of a specific video record.</p>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/videos/{id}</span>
+      </div>
+      <pre><code>curl http://localhost:8080/api/videos/8f3b23a1-7b0d-4ea3-8822-2a5490bc8201</code></pre>
+      <p class="doc-p">Response payload:</p>
+      <pre><code>{
+  "id": "8f3b23a1-7b0d-4ea3-8822-2a5490bc8201",
+  "title": "Introduction Video",
+  "description": "Getting started guide",
+  "status": "READY",
+  "hlsUrl": "http://localhost:9000/originals/8f3b23a1.../master.m3u8",
+  "thumbnailUrl": "http://localhost:9000/originals/8f3b23a1.../thumbnail.png",
+  "duration": 12.4,
+  "width": 1920,
+  "height": 1080,
+  "codec": "h264",
+  "creator": "creator1"
+}</code></pre>
+    </section>
+
+    <section id="delete-video" class="docs-section">
+      <h2 class="doc-subtitle">Delete Video</h2>
+      <p class="doc-p">Delete a video record, removing all related media assets and transcoded folders from MinIO.</p>
+      <div class="endpoint">
+        <span class="method delete">DELETE</span>
+        <span class="path">/api/videos/{id}</span>
+      </div>
+      <p class="doc-p">Requires header: <code>Authorization: Bearer &lt;token&gt;</code>. Action is protected; only the original creator of the video can trigger its deletion.</p>
+      <pre><code>curl -X DELETE http://localhost:8080/api/videos/8f3b23a1-7b0d-4ea3-8822-2a5490bc8201 \
+  -H "Authorization: Bearer eyJhbGciOi..."</code></pre>
+    </section>
+
+    <section id="hls-player" class="docs-section">
+      <h2 class="doc-subtitle">HLS Playback Integration</h2>
+      <p class="doc-p">To stream the adaptive bitrate video in web applications, fetch the <code>hlsUrl</code> from the video metadata and load it inside an HLS-compatible player.</p>
+      <h3 class="doc-heading">Standard HTML5 + Hls.js Example</h3>
+      <p class="doc-p">Use Hls.js to support HLS streaming in browsers that do not have native HLS capabilities (like Chrome, Firefox, or Edge on Windows):</p>
+      <pre><code>&lt;video id="video" controls width="640" height="360"&gt;&lt;/video&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/hls.js@latest"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const video = document.getElementById('video');
+  const videoSrc = 'http://localhost:9000/originals/8f3b23a1-7b0d-4ea3-8822-2a5490bc8201/master.m3u8';
+  
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video);
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Native support (Safari / iOS)
+    video.src = videoSrc;
+  }
+&lt;/script&gt;</code></pre>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="footer-copy">© 2026 StreamForge — Decoupled Ingestion. Transcoded for Perfection. Delivered with Precision.</div>
+    <div class="footer-links">
+      <a href="index.html">Back to Site</a>
+      <a href="https://github.com/sivajisnehith/StreamForge.git" target="_blank" rel="noopener noreferrer">Star us on GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Simple sidebar active link highlighting on scroll
+  const links = document.querySelectorAll('.sidebar-link');
+  const sections = document.querySelectorAll('.docs-section');
+
+  function changeActiveLink() {
+    let index = sections.length;
+
+    while(--index && window.scrollY + 160 < sections[index].offsetTop) {}
+    
+    links.forEach((link) => link.classList.remove('active'));
+    links[index].classList.add('active');
+  }
+
+  changeActiveLink();
+  window.addEventListener('scroll', changeActiveLink);
+</script>
+
+</body>
+</html>

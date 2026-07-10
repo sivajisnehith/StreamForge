@@ -116,45 +116,23 @@ StreamForge
 
 ### Prerequisites
 
-* Java Development Kit (JDK) 21 installed and configured on your system path.
-* Maven 3.x build tool.
 * Docker and Docker Compose installed.
-* FFmpeg and FFprobe binaries installed on the host system path (required for
-  local development).
 
-### Running Locally
+### Running StreamForge
 
-1. **Start backing services**:
-   Navigate to the project root directory and start Postgres, RabbitMQ, and
-   MinIO in the background:
+StreamForge is fully dockerized. You do not need Java, Maven, or FFmpeg installed on your host system.
+
+1. **Start the entire application stack**:
+   Build the application container and start all services (StreamForge app, Postgres, RabbitMQ, MinIO) in the background:
    ```bash
-   docker-compose up -d
+   docker-compose up --build -d
    ```
 
-2. **Configure local variables**:
-   Verify that your local variables in `src/main/resources/application.properties`
-   correspond to the container ports. By default, the application connects to
-   `localhost` ports.
-
-3. **Start the application**:
-   Compile the source code and start the Spring Boot runtime:
-   ```bash
-   ./mvnw spring-boot:run
-   ```
-
-4. **Verify Database Connection**:
-   Check if the database initialized and compiled tables successfully by running:
+2. **Verify Database Connection**:
+   Once the containers are running, check if the database initialized successfully:
    ```bash
    docker exec -it streamforge-postgres psql -U postgres -d streamforge -c "\dt"
    ```
-
-### Running with Docker
-
-To build the Spring Boot application container and run it inside the
-docker-compose network alongside the backing services:
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-```
 
 ### Swagger URL
 

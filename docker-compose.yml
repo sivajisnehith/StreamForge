@@ -49,6 +49,35 @@ services:
     volumes:
       - minio_data:/data
 
+  streamforge:
+    build: .
+    container_name: streamforge-app
+    restart: unless-stopped
+
+    depends_on:
+      - postgres
+      - rabbitmq
+      - minio
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: streamforge
+      RABBITMQ_PASSWORD: streamforge_pass
+
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+
+    volumes:
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
+
 volumes:
   postgres_data:
   rabbitmq_data:

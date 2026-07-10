@@ -66,10 +66,25 @@ public class VideoProcessingService {
 
         logger.info("Video {} status updated to PENDING", video.getId());
 
+        // Artificial delay so status change to PENDING is visible on the dashboard
+        try {
+            Thread.sleep(4000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         video.setStatus(VideoStatus.PROCESSING);
         videoRepository.save(video);
         
         logger.info("Video {} status updated to PROCESSING", video.getId());
+
+        // Artificial delay so status change to PROCESSING is visible on the dashboard
+        try {
+            Thread.sleep(4000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         Path inputFile = Paths.get(uploadDir, message.getStoredFileName());
         Path outputDirectory = Paths.get(processedDir, video.getId().toString());
         Files.createDirectories(outputDirectory);
