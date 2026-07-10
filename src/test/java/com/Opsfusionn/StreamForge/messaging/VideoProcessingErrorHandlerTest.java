@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.messaging.support.MessageBuilder;
@@ -45,7 +46,7 @@ public class VideoProcessingErrorHandlerTest {
         Channel channel = mock(Channel.class);
         ListenerExecutionFailedException exception = new ListenerExecutionFailedException("Processing failed", new RuntimeException());
 
-        assertThrows(ListenerExecutionFailedException.class, () -> {
+        assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
             errorHandler.handleError(amqpMessage, channel, message, exception);
         });
 

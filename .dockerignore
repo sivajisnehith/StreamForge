@@ -1,0 +1,9 @@
+.idea
+.vscode
+.git
+.gitignore
+docs
+*.iml
+
+target/*
+!target/*.jar

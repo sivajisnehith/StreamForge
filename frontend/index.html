@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreamForge — Adaptive Streaming Infrastructure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #07090c;
+    --bg-alt: #0a0d11;
+    --surface: #10141b;
+    --surface-2: #171d26;
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.12);
+    --ember: #ff6a28;
+    --ember-dim: #a8461a;
+    --ember-glow: rgba(255,106,40,0.2);
+    --signal: #34d1c4;
+    --signal-dim: #1f7d76;
+    --signal-glow: rgba(52,209,196,0.15);
+    --text: #f0f3f6;
+    --text-dim: #a2aebf;
+    --text-faint: #636e7f;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  a{ color: inherit; text-decoration: none; }
+  img,canvas{ display:block; max-width:100%; }
+
+  ::selection{ background: var(--ember); color: #0a0c0f; }
+
+  /* Fluid wrap layout with enhanced side margins */
+  .wrap{
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  @media (max-width: 768px) {
+    .wrap {
+      padding: 0 32px;
+    }
+  }
+  @media (max-width: 480px) {
+    .wrap {
+      padding: 0 24px;
+    }
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    background: rgba(7, 9, 12, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner{
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 20px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  @media (max-width: 768px) {
+    .nav-inner {
+      padding: 16px 32px;
+    }
+  }
+  @media (max-width: 480px) {
+    .nav-inner {
+      padding: 16px 24px;
+    }
+  }
+  .logo{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    user-select: none;
+  }
+  .logo-mark{
+    width: 24px; height:24px;
+    position:relative;
+    flex-shrink:0;
+    filter: drop-shadow(0 2px 8px rgba(255, 106, 40, 0.4));
+  }
+  .logo-mark svg{ width:100%; height:100%; }
+  .nav-links{
+    display:flex;
+    gap: 36px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+  }
+  .nav-links a{
+    transition: color .25s ease, transform .2s ease;
+  }
+  .nav-links a:hover{
+    color: var(--text);
+  }
+  .nav-cta{
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space:nowrap;
+  }
+  .nav-cta:hover{
+    border-color: var(--ember);
+    background: var(--ember-glow);
+    box-shadow: 0 4px 20px rgba(255, 106, 40, 0.15);
+    transform: translateY(-1px);
+  }
+  @media (max-width: 860px){
+    .nav-links{ display:none; }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position: relative;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding: 160px 0 100px;
+    overflow: hidden;
+  }
+  #hero-canvas{
+    position:absolute;
+    top:0; left:0; right:0; bottom:0;
+    z-index:0;
+    opacity: 0.95;
+  }
+  .hero-fade{
+    position:absolute;
+    inset:0;
+    background: linear-gradient(180deg, rgba(7,9,12,0.1) 0%, rgba(7,9,12,0.5) 60%, var(--bg) 100%);
+    z-index:1;
+    pointer-events:none;
+  }
+  .hero-content{
+    position:relative;
+    z-index:2;
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--signal);
+    display:inline-flex;
+    align-items:center;
+    gap: 10px;
+    margin-bottom: 28px;
+    background: rgba(52,209,196,0.06);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(52,209,196,0.15);
+  }
+  .eyebrow::before{
+    content:'';
+    width:7px; height:7px;
+    border-radius:50%;
+    background: var(--signal);
+    box-shadow: 0 0 10px var(--signal);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  h1.hero-headline{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(42px, 7vw, 78px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    max-width: 920px;
+  }
+  h1.hero-headline .accent{
+    background: linear-gradient(135deg, #ff8c55 0%, #ff5200 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--ember); /* Fallback */
+  }
+
+  .hero-sub{
+    margin-top: 28px;
+    max-width: 680px;
+    font-size: 18px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .hero-tagline{
+    margin-top: 32px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-faint);
+    letter-spacing: 0.03em;
+  }
+  .hero-tagline span{ color: var(--text-dim); }
+  .hero-tagline .sep{ color: var(--ember-dim); margin: 0 10px; }
+
+  .hero-actions{
+    margin-top: 48px;
+    display:flex;
+    gap: 16px;
+    flex-wrap:wrap;
+  }
+  .btn-primary{
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 28px;
+    background: var(--ember);
+    color: #07090c;
+    border-radius: 4px;
+    border: 1px solid var(--ember);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+  }
+  .btn-primary:hover{
+    background: #ff7d42;
+    border-color: #ff7d42;
+    box-shadow: 0 8px 30px rgba(255,106,40,0.35);
+    transform: translateY(-2px);
+  }
+  .btn-secondary{
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px 28px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text);
+    background: transparent;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+  }
+  .btn-secondary:hover{
+    border-color: var(--signal);
+    color: var(--signal);
+    box-shadow: 0 8px 24px rgba(52,209,196,0.1);
+    transform: translateY(-2px);
+  }
+
+  /* ---------- SECTION SHARED ---------- */
+  section{ position:relative; padding: 140px 0; }
+  @media (max-width: 768px) {
+    section { padding: 90px 0; }
+  }
+  .section-label{
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 20px;
+  }
+  h2.section-title{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(30px, 4vw, 44px);
+    letter-spacing: -0.02em;
+    max-width: 780px;
+    line-height: 1.2;
+  }
+  .section-desc{
+    margin-top: 24px;
+    max-width: 720px;
+    color: var(--text-dim);
+    font-size: 17px;
+    line-height: 1.75;
+  }
+
+  /* ---------- PROBLEM ---------- */
+  .problem{
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .problem-grid{
+    margin-top: 64px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items:stretch;
+  }
+  .problem-before, .problem-after{
+    font-family: var(--mono);
+    font-size: 13.5px;
+    padding: 56px 28px 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    position: relative;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  }
+  .problem-before::before, .problem-after::before {
+    content: '';
+    position: absolute;
+    top: 20px; left: 24px;
+    width: 38px; height: 8px;
+    background: radial-gradient(circle, #ff5f56 20%, transparent 20%),
+                radial-gradient(circle, #ffbd2e 20%, transparent 20%),
+                radial-gradient(circle, #27c93f 20%, transparent 20%);
+    background-size: 12px 8px;
+    background-repeat: no-repeat;
+    background-position: 0px 0px, 12px 0px, 24px 0px;
+    opacity: 0.6;
+  }
+  .problem-before{
+    color: var(--text-faint);
+    background: rgba(255,255,255,0.015);
+  }
+  .problem-after{
+    color: var(--signal);
+    background: rgba(52,209,196,0.02);
+    border-color: rgba(52,209,196,0.15);
+  }
+  .problem-tag{
+    display:block;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 16px;
+    color: inherit;
+    opacity: .7;
+  }
+  @media (max-width: 860px){
+    .problem-grid{ grid-template-columns: 1fr; gap: 30px; }
+  }
+
+  /* ---------- FEATURES ---------- */
+  .features-grid{
+    margin-top: 64px;
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .feature-card{
+    background: linear-gradient(135deg, rgba(16,20,27,0.5) 0%, rgba(10,13,17,0.3) 100%);
+    padding: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .feature-card:hover{
+    background: linear-gradient(135deg, rgba(23,29,38,0.7) 0%, rgba(16,20,27,0.5) 100%);
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  }
+  .feature-icon{
+    width: 44px; height:44px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 2px 10px rgba(255,255,255,0.05));
+  }
+  .feature-icon svg{ width:100%; height:100%; }
+  .feature-card h3{
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .feature-how{
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+  .feature-benefit{
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--signal);
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 860px){
+    .features-grid{ grid-template-columns: 1fr; gap: 20px; }
+    .feature-card{ padding: 32px; }
+  }
+
+  /* ---------- WORKFLOW ---------- */
+  .workflow{
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .workflow-rail{
+    margin-top: 72px;
+    position: relative;
+  }
+  .workflow-rail::before{
+    content:'';
+    position:absolute;
+    left: 28px; top: 14px; bottom: 14px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--ember) 0%, var(--signal) 100%);
+    opacity: .25;
+  }
+  .step{
+    display:grid;
+    grid-template-columns: 58px 1fr;
+    gap: 28px;
+    padding-bottom: 56px;
+    position: relative;
+  }
+  .step:last-child{ padding-bottom: 0; }
+  .step-num{
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: var(--bg-alt);
+    border: 2px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ember);
+    z-index:1;
+    flex-shrink:0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .step-body h4{
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-top: 14px;
+  }
+  .step-body p{
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 600px;
+  }
+
+  /* ---------- TECH ---------- */
+  .tech-grid{
+    margin-top: 64px;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .tech-item{
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 26px 28px;
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(16,20,27,0.3) 100%);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tech-item:hover{
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .tech-role{
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+  .tech-name{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 18px;
+  }
+  @media (max-width: 860px){ .tech-grid{ grid-template-columns: 1fr 1fr; gap: 16px; } }
+  @media (max-width: 480px){ .tech-grid{ grid-template-columns: 1fr; } }
+
+  /* ---------- USE CASES ---------- */
+  .usecases{
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .usecase-list{ margin-top: 64px; }
+  .usecase-row{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap: 40px;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    align-items:baseline;
+  }
+  .usecase-list .usecase-row:last-child{ border-bottom: 1px solid var(--border); }
+  .usecase-name{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 20px;
+  }
+  .usecase-desc{
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 640px;
+  }
+  @media (max-width: 768px){
+    .usecase-row{ grid-template-columns: 1fr; gap: 12px; padding: 24px 0; }
+  }
+
+  /* ---------- CTA / FOOTER ---------- */
+  .cta{
+    text-align:center;
+    padding: 160px 0;
+  }
+  .cta h2{
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 54px);
+    letter-spacing: -0.02em;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.15;
+  }
+  .cta p{
+    margin-top: 24px;
+    color: var(--text-dim);
+    font-size: 18px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta .hero-actions{ justify-content:center; margin-top:44px; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+    background: var(--bg);
+  }
+  .footer-inner{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap: 20px;
+  }
+  .footer-copy{
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+  .footer-links{
+    display:flex;
+    gap: 32px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+  }
+  .footer-links a{
+    transition: color .2s;
+  }
+  .footer-links a:hover{
+    color: var(--text);
+  }
+
+  /* reveal-on-scroll */
+  .reveal{
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .8s cubic-bezier(0.16, 1, 0.3, 1), transform .8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.in{ opacity:1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{ transition: none; opacity:1; transform:none; }
+    .eyebrow::before{ animation: none; }
+  }
+
+  :focus-visible{
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+
+  /* ---------- NAV RESPONSIVENESS & MOBILE MENU ---------- */
+  .nav-cta-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  /* Hamburger toggle button styling */
+  .menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 100;
+    padding: 0;
+  }
+  .menu-bar {
+    width: 100%;
+    height: 2px;
+    background-color: var(--text);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left center;
+  }
+
+  /* Mobile menu overlay styling */
+  .mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 9, 12, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 45;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 80px 24px 40px;
+  }
+  .mobile-menu-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mobile-menu-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    max-width: 320px;
+    transform: translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .mobile-menu-overlay.active .mobile-menu-links {
+    transform: translateY(0);
+  }
+  .mobile-link {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-dim);
+    transition: color 0.2s;
+  }
+  .mobile-link:hover {
+    color: var(--text);
+  }
+  .mobile-menu-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+  .mobile-cta-btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    transition: all 0.25s;
+  }
+  .mobile-cta-btn:hover {
+    border-color: var(--signal);
+    box-shadow: 0 0 15px rgba(52,209,196,0.1);
+  }
+  .mobile-cta-btn.api-btn {
+    border-color: var(--ember);
+    color: var(--ember);
+    background: rgba(255, 106, 40, 0.03);
+  }
+  .mobile-cta-btn.api-btn:hover {
+    background: var(--ember-glow);
+    box-shadow: 0 0 15px rgba(255, 106, 40, 0.2);
+  }
+
+  /* Breakpoint transitions */
+  @media (max-width: 860px) {
+    .nav-links {
+      display: none;
+    }
+    .nav-cta-group {
+      display: none; /* Hide all desktop CTA buttons */
+    }
+    .menu-toggle {
+      display: flex; /* Show mobile toggle */
+    }
+  }
+
+  /* Hamburger transformation when active */
+  .menu-toggle.active .menu-bar:nth-child(1) {
+    transform: rotate(45deg) translate(2px, 2px);
+  }
+  .menu-toggle.active .menu-bar:nth-child(2) {
+    transform: rotate(-45deg) translate(2px, -2px);
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 12h5v10l8-10h-5V2z" fill="#ff6a28"/></svg>
+      </span>
+      StreamForge
+    </div>
+    <nav class="nav-links">
+      <a href="#features">Product</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#tech">Technology</a>
+      <a href="#usecases">Use Cases</a>
+      <a href="docs.html">Docs</a>
+    </nav>
+    <div class="nav-cta-group">
+      <a href="login.html" class="nav-cta nav-signin-btn">Sign In</a>
+      <a href="#cta" class="nav-cta nav-api-btn" style="border-color: var(--ember); color: var(--ember);">Get API Access →</a>
+    </div>
+    
+    <!-- Mobile Menu Toggle Button (hidden on desktop) -->
+    <button class="menu-toggle" id="menu-toggle-btn" aria-label="Toggle Menu">
+      <span class="menu-bar"></span>
+      <span class="menu-bar"></span>
+    </button>
+  </div>
+</header>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobile-menu">
+  <div class="mobile-menu-links">
+    <a href="#features" class="mobile-link">Product</a>
+    <a href="#workflow" class="mobile-link">Workflow</a>
+    <a href="#tech" class="mobile-link">Technology</a>
+    <a href="#usecases" class="mobile-link">Use Cases</a>
+    <a href="docs.html" class="mobile-link">Docs</a>
+    
+    <div class="mobile-menu-divider"></div>
+    
+    <a href="login.html" class="mobile-cta-btn font-mono">Sign In</a>
+    <a href="#cta" class="mobile-cta-btn font-mono api-btn">Get API Access →</a>
+  </div>
+</div>
+
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-fade"></div>
+  <div class="wrap hero-content">
+    <div class="eyebrow">Asynchronous ingestion · Adaptive HLS delivery</div>
+    <h1 class="hero-headline">Forge Seamless Streaming Experiences.<br>Any Device. <span class="accent">Any Bandwidth.</span></h1>
+    <p class="hero-sub">StreamForge is an enterprise-grade, asynchronous video ingestion and adaptive streaming platform. We convert raw video uploads into smooth, multi-resolution HLS streams in the background, keeping your web applications lightning-fast and responsive.</p>
+    <div class="hero-tagline">
+      <span>Decoupled Ingestion</span><span class="sep">/</span><span>Transcoded for Perfection</span><span class="sep">/</span><span>Delivered with Precision</span>
+    </div>
+    <div class="hero-actions">
+      <a href="login.html" class="btn-primary">Start Ingesting Video</a>
+      <a href="#workflow" class="btn-secondary">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<section class="problem">
+  <div class="wrap">
+    <div class="section-label reveal">The Problem</div>
+    <h2 class="section-title reveal">Large video uploads shouldn't hold your API hostage.</h2>
+    <p class="section-desc reveal">Traditional web applications slow down, freeze, or time out when users upload large video files. Processing, transcoding, and distributing high-definition video in real time strains servers and ruins user experience. StreamForge solves this by decoupling the upload process from the transcoding engine — your users get an instant response while our system does the heavy lifting behind the scenes.</p>
+    <div class="problem-grid">
+      <div class="problem-before reveal">
+        <span class="problem-tag">// without streamforge</span>
+        POST /videos/upload<br>
+        &nbsp;&nbsp;→ transcoding inline...<br>
+        &nbsp;&nbsp;→ request blocked 00:47<br>
+        &nbsp;&nbsp;→ client timeout<br>
+        &nbsp;&nbsp;→ 504 Gateway Timeout
+      </div>
+      <div class="problem-after reveal">
+        <span class="problem-tag">// with streamforge</span>
+        POST /videos/upload<br>
+        &nbsp;&nbsp;→ stored to MinIO (0.3s)<br>
+        &nbsp;&nbsp;→ 202 Accepted<br>
+        &nbsp;&nbsp;→ status: PROCESSING<br>
+        &nbsp;&nbsp;→ status: READY (background)
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-label reveal">Core Capabilities</div>
+    <h2 class="section-title reveal">Everything the pipeline needs, nothing your API should carry.</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6a28" stroke-width="1.6"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <h3>Instant Asynchronous Ingestion</h3>
+        <p class="feature-how">Raw videos are written directly to high-performance object storage (MinIO/S3 compatible), immediately releasing the client connection.</p>
+        <div class="feature-benefit">→ Zero request timeouts. Zero waiting for users.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#34d1c4" stroke-width="1.6"><path d="M4 4h16v10H4z"/><path d="M4 18h6M14 18h6"/></svg></div>
+        <h3>Adaptive Bitrate Transcoding</h3>
+        <p class="feature-how">Sources are automatically processed into HLS formats — 1080p, 720p, and 480p streams — wrapped in a master .m3u8 playlist.</p>
+        <div class="feature-benefit">→ Seamless playback, dynamic quality switching.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6a28" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4L9 18"/></svg></div>
+        <h3>Automated Thumbnail & Media Extraction</h3>
+        <p class="feature-how">Leveraging FFmpeg/FFprobe, the platform grabs a high-resolution preview poster and extracts deep audio/video codec metadata.</p>
+        <div class="feature-benefit">→ Rich previews ready the moment a feed loads.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#34d1c4" stroke-width="1.6"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg></div>
+        <h3>Enterprise-Grade Security</h3>
+        <p class="feature-how">Secure endpoint protection using stateless JSON Web Tokens (JWT) and strict resource authorization rules.</p>
+        <div class="feature-benefit">→ Creators only ever manage their own content.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="workflow" id="workflow">
+  <div class="wrap">
+    <div class="section-label reveal">The Workflow</div>
+    <h2 class="section-title reveal">How the magic happens.</h2>
+    <div class="workflow-rail">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-body"><h4>Upload</h4><p>A user uploads a video file via the secure Spring Boot API.</p></div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-body"><h4>Stage</h4><p>The raw video is saved to MinIO object storage, and metadata is registered in PostgreSQL.</p></div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-body"><h4>Queue</h4><p>A messaging event is dispatched to RabbitMQ, notifying the processing queue.</p></div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <div class="step-body"><h4>Transcode</h4><p>Background workers consume the message, spin up FFmpeg, transcode into HLS streams, generate thumbnails, and analyze codec data.</p></div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">05</div>
+        <div class="step-body"><h4>Publish</h4><p>The final HLS assets are pushed back to storage, the database status updates to READY, and the video is instantly available for global streaming.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="wrap">
+    <div class="section-label reveal">Technology Blueprint</div>
+    <h2 class="section-title reveal">Built on infrastructure that doesn't flinch under load.</h2>
+    <div class="tech-grid">
+      <div class="tech-item reveal"><div class="tech-role">Framework</div><div class="tech-name">Spring Boot (Java 21) + Security</div></div>
+      <div class="tech-item reveal"><div class="tech-role">Message Broker</div><div class="tech-name">RabbitMQ</div></div>
+      <div class="tech-item reveal"><div class="tech-role">Object Storage</div><div class="tech-name">MinIO (S3-compatible)</div></div>
+      <div class="tech-item reveal"><div class="tech-role">Database</div><div class="tech-name">PostgreSQL</div></div>
+      <div class="tech-item reveal"><div class="tech-role">Engine</div><div class="tech-name">FFmpeg / FFprobe</div></div>
+      <div class="tech-item reveal"><div class="tech-role">Deployment</div><div class="tech-name">Docker & Docker Compose</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="usecases" id="usecases">
+  <div class="wrap">
+    <div class="section-label reveal">Ideal Use Cases</div>
+    <h2 class="section-title reveal">Where StreamForge fits.</h2>
+    <div class="usecase-list">
+      <div class="usecase-row reveal">
+        <div class="usecase-name">Video-on-Demand</div>
+        <div class="usecase-desc">Scale content delivery platforms without risking infrastructure overhead.</div>
+      </div>
+      <div class="usecase-row reveal">
+        <div class="usecase-name">E-Learning Platforms</div>
+        <div class="usecase-desc">Host high-quality lecture videos that load instantly on both mobile data and broadband.</div>
+      </div>
+      <div class="usecase-row reveal">
+        <div class="usecase-name">Corporate Portals</div>
+        <div class="usecase-desc">Share internal training videos and town halls securely.</div>
+      </div>
+      <div class="usecase-row reveal">
+        <div class="usecase-name">Social & Content Hubs</div>
+        <div class="usecase-desc">Empower creators to upload content while retaining seamless feed navigation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="cta">
+  <div class="wrap">
+    <h2 class="reveal">Stop blocking your API on video processing.</h2>
+    <p class="reveal">Decoupled ingestion. Adaptive delivery. Ready in one Docker Compose file.</p>
+    <div class="hero-actions">
+      <a href="login.html" class="btn-primary">Start Ingesting Video</a>
+      <a href="docs.html" class="btn-secondary">Read the Docs</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="footer-copy">© 2026 StreamForge — Decoupled Ingestion. Transcoded for Perfection. Delivered with Precision.</div>
+    <div class="footer-links">
+      <a href="#features">Product</a>
+      <a href="#tech">Technology</a>
+      <a href="#usecases">Use Cases</a>
+      <a href="https://github.com/sivajisnehith/StreamForge.git" target="_blank" rel="noopener noreferrer">Star us on GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  // ---------- reveal on scroll ----------
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el=>io.observe(el));
+
+  // ---------- 3D hero: the forge pipeline ----------
+  (function(){
+    const canvas = document.getElementById('hero-canvas');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let width = canvas.clientWidth || window.innerWidth;
+    let height = canvas.clientHeight || window.innerHeight;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
+    camera.position.set(0, 0.6, 11);
+
+    const emberColor = new THREE.Color(0xff6a28);
+    const signalColor = new THREE.Color(0x34d1c4);
+
+    // group holding the whole pipeline, offset right-of-center so headline reads on the left
+    const group = new THREE.Group();
+    group.position.set(2.4, -0.2, 0);
+    scene.add(group);
+
+    // --- input cube: raw upload ---
+    const inputGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
+    const inputMat = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.4, metalness: 0.3, emissive: 0x0d0f12 });
+    const inputCube = new THREE.Mesh(inputGeo, inputMat);
+    inputCube.position.set(-4.2, 0, 0);
+    group.add(inputCube);
+    const inputWire = new THREE.LineSegments(new THREE.EdgesGeometry(inputGeo), new THREE.LineBasicMaterial({ color: 0x556070 }));
+    inputCube.add(inputWire);
+
+    // --- forge core: icosahedron wireframe, glowing ---
+    const coreGeo = new THREE.IcosahedronGeometry(1.15, 1);
+    const coreMat = new THREE.MeshBasicMaterial({ color: emberColor, wireframe: true, transparent: true, opacity: 0.85 });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    core.position.set(-0.6, 0, 0);
+    group.add(core);
+
+    const coreGlowGeo = new THREE.IcosahedronGeometry(1.5, 1);
+    const coreGlowMat = new THREE.MeshBasicMaterial({ color: emberColor, transparent: true, opacity: 0.06 });
+    const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
+    core.add(coreGlow);
+
+    const corePoint = new THREE.PointLight(0xff6a28, 3.2, 9);
+    corePoint.position.set(-0.6, 0, 0.5);
+    group.add(corePoint);
+
+    const signalPoint = new THREE.PointLight(0x34d1c4, 2.2, 9);
+    signalPoint.position.set(3.2, 0, 1);
+    group.add(signalPoint);
+
+    scene.add(new THREE.AmbientLight(0x404850, 1.2));
+
+    // --- output planes: 1080p / 720p / 480p diverging ---
+    const outputs = [];
+    const outputSpecs = [
+      { h: 1.5, y: 1.35, label: '1080p' },
+      { h: 1.05, y: 0,    label: '720p'  },
+      { h: 0.7,  y: -1.35, label: '480p' }
+    ];
+    outputSpecs.forEach((spec, i)=>{
+      const geo = new THREE.PlaneGeometry(1.6, spec.h);
+      const mat = new THREE.MeshStandardMaterial({
+        color: signalColor, transparent: true, opacity: 0.5 - i*0.06,
+        side: THREE.DoubleSide, roughness: 0.5, metalness: 0.2, emissive: 0x0b2b28
+      });
+      const plane = new THREE.Mesh(geo, mat);
+      plane.position.set(3.6, spec.y, 0);
+      plane.userData.baseY = spec.y;
+      plane.userData.phase = i * 1.3;
+      group.add(plane);
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x6fe6dc, transparent: true, opacity: 0.5 }));
+      plane.add(edge);
+      outputs.push(plane);
+    });
+
+    // --- connecting beams ---
+    function makeBeam(from, to, color){
+      const points = [from, to];
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.35 });
+      return new THREE.Line(geo, mat);
+    }
+    group.add(makeBeam(new THREE.Vector3(-3.6,0,0), new THREE.Vector3(-1.6,0,0), 0x556070));
+    outputSpecs.forEach(spec=>{
+      group.add(makeBeam(new THREE.Vector3(0.3,0,0), new THREE.Vector3(2.9, spec.y*0.7, 0), 0x2f7c76));
+    });
+
+    // --- particle stream: embers flowing input -> core -> outputs ---
+    const PARTICLE_COUNT = 90;
+    const particleGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const seeds = new Float32Array(PARTICLE_COUNT);
+    for(let i=0;i<PARTICLE_COUNT;i++){
+      seeds[i] = Math.random();
+      positions[i*3] = -4.2;
+      positions[i*3+1] = (Math.random()-0.5)*0.6;
+      positions[i*3+2] = (Math.random()-0.5)*0.6;
+    }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMat = new THREE.PointsMaterial({ color: 0xffb27a, size: 0.05, transparent: true, opacity: 0.85 });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    group.add(particles);
+
+    function updateParticles(t){
+      const pos = particleGeo.attributes.position.array;
+      for(let i=0;i<PARTICLE_COUNT;i++){
+        const localT = (t*0.15 + seeds[i]) % 1;
+        const targetIdx = i % 3;
+        const targetY = outputSpecs[targetIdx].y;
+        let x, y, z;
+        if(localT < 0.35){
+          const lt = localT/0.35;
+          x = THREE.MathUtils.lerp(-4.2, -0.6, lt);
+          y = THREE.MathUtils.lerp((seeds[i]-0.5)*0.6, 0, lt);
+          z = (seeds[i]-0.5)*0.4;
+        } else {
+          const lt = (localT-0.35)/0.65;
+          x = THREE.MathUtils.lerp(-0.6, 3.6, lt);
+          y = THREE.MathUtils.lerp(0, targetY, lt);
+          z = 0;
+        }
+        pos[i*3] = x; pos[i*3+1] = y; pos[i*3+2] = z;
+      }
+      particleGeo.attributes.position.needsUpdate = true;
+    }
+
+    // mouse parallax
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e)=>{
+      mouseX = (e.clientX / window.innerWidth - 0.5);
+      mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    let frame = 0;
+    function animate(){
+      frame++;
+      const t = frame / 60;
+      if(!reducedMotion){
+        core.rotation.y += 0.006;
+        core.rotation.x += 0.002;
+        updateParticles(t);
+        outputs.forEach(p=>{
+          p.position.y = p.userData.baseY + Math.sin(t*0.8 + p.userData.phase)*0.08;
+        });
+        group.rotation.y += (mouseX*0.3 - group.rotation.y) * 0.02;
+        group.rotation.x += (mouseY*0.15 - group.rotation.x) * 0.02;
+      }
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    function onResize(){
+      width = window.innerWidth;
+      height = canvas.parentElement.clientHeight || window.innerHeight;
+      camera.aspect = width/height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+
+      // Adjust group position and scale dynamically for responsiveness
+      if (width < 860) {
+        group.position.set(0, -1.8, 0);
+        group.scale.setScalar(0.75);
+      } else if (width < 1100) {
+        group.position.set(1.5, -0.2, 0);
+        group.scale.setScalar(0.9);
+      } else {
+        group.position.set(2.4, -0.2, 0);
+        group.scale.setScalar(1.0);
+      }
+    }
+    window.addEventListener('resize', onResize);
+    onResize();
+  })();
+</script>
+
+<script>
+  // Mobile menu toggle logic
+  const menuToggle = document.getElementById('menu-toggle-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileLinks = document.querySelectorAll('.mobile-link, .mobile-cta-btn');
+
+  if (menuToggle && mobileMenu) {
+    menuToggle.addEventListener('click', () => {
+      const active = menuToggle.classList.toggle('active');
+      mobileMenu.classList.toggle('active', active);
+      document.body.style.overflow = active ? 'hidden' : ''; // prevent scrolling behind menu
+    });
+
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        menuToggle.classList.remove('active');
+        mobileMenu.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    });
+  }
+</script>
+</body>
+</html>
