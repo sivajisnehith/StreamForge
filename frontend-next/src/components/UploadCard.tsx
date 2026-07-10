@@ -2,13 +2,14 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Check, Loader2 } from 'lucide-react';
+import { Upload, X, Check, Loader2, ShieldAlert } from 'lucide-react';
 
 interface UploadCardProps {
   onUploadSuccess?: () => void;
+  existingCount: number;
 }
 
-export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
+export default function UploadCard({ onUploadSuccess, existingCount }: UploadCardProps) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
@@ -16,6 +17,8 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isLimitReached = existingCount >= 3;
 
   // SVG progress ring variables
   const radius = 32;
@@ -25,6 +28,7 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   const handleDrag = (e: React.DragEvent) => {
+    if (isLimitReached) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -35,6 +39,7 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    if (isLimitReached) return;
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -58,6 +63,7 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
   };
 
   const triggerUpload = () => {
+    if (isLimitReached) return;
     if (fileInputRef.current) fileInputRef.current.click();
   };
 
@@ -72,6 +78,10 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
   const handleUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) return;
+    if (isLimitReached) {
+      alert("Ingestion Limit Reached: Please contact opsfusionn@gmail.com");
+      return;
+    }
 
     setIsUploading(true);
     setProgress(0);
@@ -114,7 +124,10 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
         }, 800);
       } else {
         setIsUploading(false);
-        alert(`Ingestion failed with status code ${xhr.status}. Make sure the Spring Boot service is running.`);
+        const errMsg = xhr.responseText.includes("Limit Reached") 
+          ? "Ingestion Limit Reached: You have reached the maximum allowance of 3 active video jobs. To expand your ingestion limits, please contact us at opsfusionn@gmail.com."
+          : `Ingestion failed with status code ${xhr.status}. Make sure the Spring Boot service is running.`;
+        alert(errMsg);
       }
     };
 
@@ -151,38 +164,61 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
         
         {/* Drag active/inactive area */}
         {!selectedFile ? (
-          <div
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-            onClick={triggerUpload}
-            className={`group relative flex flex-col items-center justify-center border border-dashed rounded-lg p-10 cursor-pointer transition-all duration-300 ${
-              dragActive 
-                ? 'border-[#ff6a28] bg-[#ff6a28]/5 shadow-[0_0_20px_rgba(255,106,40,0.05)]' 
-                : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/1'
-            }`}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="video/mp4,video/mkv"
-            />
-            
-            {/* Floating arrow animation */}
-            <motion.div
-              animate={{ y: [0, -4, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="mb-4 rounded-full bg-white/5 p-4 text-[#636e7f] group-hover:text-white transition-colors border border-white/5"
+          isLimitReached ? (
+            /* Limit Reached locked dropzone */
+            <div
+              className="group relative flex flex-col items-center justify-center border border-dashed border-[#ff5f56]/25 rounded-lg p-10 bg-[#ff5f56]/2 shadow-[0_0_20px_rgba(255,95,86,0.02)]"
             >
-              <Upload className="h-6 w-6 text-[#ff6a28] drop-shadow-[0_0_8px_#ff6a28]" />
-            </motion.div>
+              <motion.div
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                className="mb-4 rounded-full bg-white/5 p-4 text-[#ff5f56] border border-white/5"
+              >
+                <ShieldAlert className="h-6 w-6 text-[#ff5f56] drop-shadow-[0_0_8px_rgba(255,95,86,0.5)]" />
+              </motion.div>
 
-            <span className="text-sm font-semibold text-white">Drag & drop raw MP4 / MKV input</span>
-            <span className="text-xs text-[#636e7f] mt-1">or click to browse local filesystem</span>
-          </div>
+              <span className="text-sm font-semibold text-white">Ingestion Limit Reached</span>
+              <span className="text-xs text-[#636e7f] mt-2 text-center max-w-[280px] leading-relaxed">
+                You have reached the maximum allowance of 3 active video jobs. To expand ingestion limits, please email us at{' '}
+                <a href="mailto:opsfusionn@gmail.com" className="text-[#ff6a28] font-bold hover:underline">
+                  opsfusionn@gmail.com
+                </a>
+              </span>
+            </div>
+          ) : (
+            <div
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+              onClick={triggerUpload}
+              className={`group relative flex flex-col items-center justify-center border border-dashed rounded-lg p-10 cursor-pointer transition-all duration-300 ${
+                dragActive 
+                  ? 'border-[#ff6a28] bg-[#ff6a28]/5 shadow-[0_0_20px_rgba(255,106,40,0.05)]' 
+                  : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/1'
+              }`}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="video/mp4,video/mkv"
+              />
+              
+              {/* Floating arrow animation */}
+              <motion.div
+                animate={{ y: [0, -4, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                className="mb-4 rounded-full bg-white/5 p-4 text-[#636e7f] group-hover:text-white transition-colors border border-white/5"
+              >
+                <Upload className="h-6 w-6 text-[#ff6a28] drop-shadow-[0_0_8px_#ff6a28]" />
+              </motion.div>
+
+              <span className="text-sm font-semibold text-white">Drag & drop raw MP4 / MKV input</span>
+              <span className="text-xs text-[#636e7f] mt-1">or click to browse local filesystem</span>
+            </div>
+          )
         ) : (
           /* File info & progress ring */
           <div className="flex items-center justify-between rounded-lg bg-[#050816]/60 border border-white/5 p-4">
@@ -284,14 +320,20 @@ export default function UploadCard({ onUploadSuccess }: UploadCardProps) {
         {/* Submit */}
         <button
           type="submit"
-          disabled={!selectedFile || isUploading}
-          className="w-full font-mono text-xs font-bold py-3.5 rounded bg-[#ff6a28] text-black hover:bg-[#ff7d42] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_4px_20px_rgba(255,106,40,0.25)] flex items-center justify-center gap-2"
+          disabled={isLimitReached || !selectedFile || isUploading}
+          className={`w-full font-mono text-xs font-bold py-3.5 rounded transition-all flex items-center justify-center gap-2 ${
+            isLimitReached
+              ? 'bg-white/5 text-[#636e7f] border border-white/5 cursor-not-allowed'
+              : 'bg-[#ff6a28] text-black hover:bg-[#ff7d42] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_4px_20px_rgba(255,106,40,0.25)]'
+          }`}
         >
           {isUploading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Ingesting Payload...
             </>
+          ) : isLimitReached ? (
+            'Upload Limit Reached (Max 3)'
           ) : (
             'Ingest Video Stream'
           )}

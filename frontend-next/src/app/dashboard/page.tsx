@@ -121,7 +121,7 @@ export default function DashboardPage() {
         {/* Ingestion Pipeline Split layout */}
         <section id="pipeline" className="grid grid-cols-1 gap-8 lg:grid-cols-3 scroll-mt-24">
           <div className="flex flex-col gap-8 lg:col-span-2">
-            <UploadCard onUploadSuccess={fetchVideos} />
+            <UploadCard onUploadSuccess={fetchVideos} existingCount={videos.length} />
             <ProcessingPipeline videos={videos} />
           </div>
           <div className="flex flex-col gap-8 lg:col-span-1">

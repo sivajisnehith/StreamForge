@@ -53,6 +53,17 @@ package com.Opsfusionn.StreamForge.service;
         Set.of(".mp4", ".mkv", ".mov");
 
         public Video storeFile(MultipartFile file, VideoUploadRequest metadata) throws IOException{
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (!(principal instanceof User)) {
+                throw new VideoAccessDeniedException("User not authenticated.");
+            }
+            User currentUser = (User) principal;
+
+            long videoCount = videoRepository.countByUser(currentUser);
+            if (videoCount >= 3) {
+                throw new IllegalArgumentException("Ingestion Limit Reached: You have reached the maximum allowance of 3 active video jobs. To expand your ingestion limits, please contact us at opsfusionn@gmail.com.");
+            }
+
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file is empty.");
             }
@@ -126,12 +137,7 @@ package com.Opsfusionn.StreamForge.service;
             video.setTitle(metadata.getTitle());
             video.setDescription(metadata.getDescription());
 
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principal instanceof User) {
-                video.setUser((User) principal);
-            } else {
-                throw new VideoAccessDeniedException("User not authenticated.");
-            }
+            video.setUser(currentUser);
             
             //To save the video
             videoRepository.save(video);
