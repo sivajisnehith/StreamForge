@@ -1,10 +1,5 @@
 # StreamForge
 
-StreamForge is a distributed video processing backend that handles asynchronous
-HLS transcoding, metadata extraction, and streaming.
-
-## Project Overview
-
 StreamForge is designed to handle video ingestion and streaming. Instead of
 performing resource-intensive video transcoding synchronously within the HTTP
 request thread, the application decouples the upload lifecycle from the
@@ -29,36 +24,6 @@ The following diagram shows the overall architecture of StreamForge.
 <p align="center">
   <img src="docs/images/architecture.png" width="400">
 </p>
-
-## Key Features
-
-* **Video Upload Ingestion**: Validates file size constraints, checks mime types,
-  and handles direct streaming uploads to MinIO storage.
-* **Background Processing**: Uses RabbitMQ queues to decouple video transcoding
-  from API response times, preventing HTTP request timeouts.
-* **Adaptive HLS Streaming**: Transcodes source videos into HLS-compliant
-  directories containing `480p`, `720p`, and `1080p` streams accompanied by a
-  master `.m3u8` playlist.
-* **Thumbnail Generation**: Automatically extracts a poster frame at the
-  1-second mark of the video using FFmpeg.
-* **Metadata Extraction**: Runs FFprobe to parse media characteristics such as
-  video/audio codecs, bitrate, width, height, and duration.
-* **JWT Authentication**: Protects endpoints using Spring Security and
-  stateless JSON Web Tokens.
-* **Resource Authorization**: Prevents unauthorized modifications by verifying
-  that only the user who uploaded a video can update its status or delete it.
-* **Paginated Retrievals**: Serves video lists using Spring Data Pagination
-  to limit database memory consumption.
-* **Keyword Search**: Filters video records using case-insensitive substring
-  matching against the video title.
-* **Request Validation**: Validates incoming payload constraints using Jakarta
-  validation annotations (e.g., username length between 3 and 50 characters,
-  password minimum of 6 characters, and non-empty video titles up to 100
-  characters).
-* **Global Exception Handling**: Maps custom application errors to uniform
-  HTTP response payloads.
-* **API Documentation**: Integrates Swagger UI to provide a visual interface
-  for endpoint testing.
 
 ## Video Processing Pipeline
 
@@ -92,36 +57,6 @@ The following diagram illustrates how the application and supporting services ar
   <img src="docs/images/deployment_diagram.png" width="750">
 </p>
 
-## Technology Stack
-
-| Component | Technology | Version / Purpose |
-|---|---|---|
-| Language | Java 21 | Long-Term Support JDK release |
-| Web Framework | Spring Boot 3 | Web MVC and dependency injection |
-| Security | Spring Security | Filters request authentication |
-| Token Provider | JWT (io.jsonwebtoken) | Generates and parses signed tokens |
-| Database | PostgreSQL 17 | Relational database engine |
-| Message Broker | RabbitMQ | Decoupled message queueing |
-| Object Storage | MinIO | S3-compatible file storage |
-| Media Tools | FFmpeg / FFprobe | Transcoding, segmenting, and metadata parsing |
-| Dependency Manager| Maven | Project compilation and dependency assembly |
-| API Docs | Swagger / SpringDoc | OpenAPI UI console |
-
-## REST API Overview
-
-* `POST /api/auth/register` - Register a new user account.
-* `POST /api/auth/login` - Authenticate credentials and return a JWT access token.
-* `POST /api/files/upload` - Upload a video file with title and description
-  fields (authenticated only).
-* `GET /api/videos` - Retrieve a paginated list of videos, optional search
-  by title keyword.
-* `GET /api/videos/{videoId}` - Retrieve video metadata details.
-* `DELETE /api/videos/{videoId}` - Delete video record and MinIO files (owner only).
-* `PATCH /api/videos/{videoId}/status` - Manually update video status (owner only).
-* `GET /api/videos/{videoId}/thumbnail.jpg` - Stream the video poster image.
-* `GET /api/videos/{videoId}/{fileName}` - Stream HLS manifest files (`.m3u8`) and
-  video chunks (`.ts`).
-
 ## Project Structure
 
 ```
@@ -146,6 +81,36 @@ StreamForge
 ├── docker-compose.yml           # Local infrastructure docker configuration
 └── pom.xml                      # Maven dependencies configuration
 ```
+
+## Key Features
+
+* **Video Upload Ingestion**: Validates file size constraints, checks mime types,
+  and handles direct streaming uploads to MinIO storage.
+* **Background Processing**: Uses RabbitMQ queues to decouple video transcoding
+  from API response times, preventing HTTP request timeouts.
+* **Adaptive HLS Streaming**: Transcodes source videos into HLS-compliant
+  directories containing `480p`, `720p`, and `1080p` streams accompanied by a
+  master `.m3u8` playlist.
+* **Thumbnail Generation**: Automatically extracts a poster frame at the
+  1-second mark of the video using FFmpeg.
+* **Metadata Extraction**: Runs FFprobe to parse media characteristics such as
+  video/audio codecs, bitrate, width, height, and duration.
+* **JWT Authentication**: Protects endpoints using Spring Security and
+  stateless JSON Web Tokens.
+* **Resource Authorization**: Prevents unauthorized modifications by verifying
+  that only the user who uploaded a video can update its status or delete it.
+* **Paginated Retrievals**: Serves video lists using Spring Data Pagination
+  to limit database memory consumption.
+* **Keyword Search**: Filters video records using case-insensitive substring
+  matching against the video title.
+* **Request Validation**: Validates incoming payload constraints using Jakarta
+  validation annotations (e.g., username length between 3 and 50 characters,
+  password minimum of 6 characters, and non-empty video titles up to 100
+  characters).
+* **Global Exception Handling**: Maps custom application errors to uniform
+  HTTP response payloads.
+* **API Documentation**: Integrates Swagger UI to provide a visual interface
+  for endpoint testing.
 
 ## Getting Started
 
