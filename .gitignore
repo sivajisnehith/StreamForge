@@ -1,6 +1,13 @@
 # Maven build output
-/target/
+target/
 *.class
+
+# AWS & Credentials / Secrets
+*acess keys*
+*access keys*
+*.pem
+*.key
+.env
 
 # Log files
 *.log
