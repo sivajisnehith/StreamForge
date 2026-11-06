@@ -18,12 +18,19 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String secretKey;
 
+    @Value("${minio.region:ap-south-1}")
+    private String region;
+
     @Bean
     public MinioClient minioClient() {
-
-        return MinioClient.builder()
+        MinioClient.Builder builder = MinioClient.builder()
                 .endpoint(url)
-                .credentials(accessKey, secretKey)
-                .build();
+                .credentials(accessKey, secretKey);
+
+        if (region != null && !region.trim().isEmpty()) {
+            builder.region(region.trim());
+        }
+
+        return builder.build();
     }
 }

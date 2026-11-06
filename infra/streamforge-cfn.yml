@@ -1,0 +1,527 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'StreamForge Complete Production Infrastructure Stack on AWS'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: 'vpc-0c8a261ba88a72c10'
+    Description: 'VPC ID for StreamForge resources'
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: 'subnet-00d29233530137916,subnet-01a9b0b337b312b45,subnet-077249fb75c3260c6'
+    Description: 'Subnets for ALB, ECS, and RDS'
+
+  MqSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Default: 'subnet-00d29233530137916'
+    Description: 'Single subnet for Amazon MQ broker'
+
+  DbUsername:
+    Type: String
+    Default: 'streamforge_admin'
+    Description: 'RDS PostgreSQL master username'
+
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Default: 'StreamForgeDbPass2026!'
+    Description: 'RDS PostgreSQL master password'
+
+  RabbitMqUsername:
+    Type: String
+    Default: 'streamforge_user'
+    Description: 'Amazon MQ RabbitMQ username'
+
+  RabbitMqPassword:
+    Type: String
+    NoEcho: true
+    Default: 'StreamForgeMqPass2026!'
+    Description: 'Amazon MQ RabbitMQ password'
+
+Resources:
+  # =========================================================================
+  # 1. VIDEO STORAGE: AMAZON S3
+  # =========================================================================
+  RawVideoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'streamforge-raw-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
+  ProcessedVideoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'streamforge-processed-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
+  # =========================================================================
+  # 2. CONTAINER IMAGES: AMAZON ECR
+  # =========================================================================
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: 'streamforge-app'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  # =========================================================================
+  # 3. MONITORING: CLOUDWATCH LOG GROUPS
+  # =========================================================================
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/ecs/streamforge-backend'
+      RetentionInDays: 14
+
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/ecs/streamforge-worker'
+      RetentionInDays: 14
+
+  # =========================================================================
+  # 4. SECRETS & CREDENTIALS: AWS SECRETS MANAGER
+  # =========================================================================
+  AppSecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: 'streamforge/production-secrets'
+      Description: 'StreamForge production database, queue, and security credentials'
+      SecretString: !Sub |
+        {
+          "DB_USERNAME": "${DbUsername}",
+          "DB_PASSWORD": "${DbPassword}",
+          "RABBITMQ_USERNAME": "${RabbitMqUsername}",
+          "RABBITMQ_PASSWORD": "${RabbitMqPassword}",
+          "JWT_SECRET": "streamforge-super-secret-jwt-key-2026-streamforge-super-secure"
+        }
+
+  # =========================================================================
+  # 5. NETWORKING & SECURITY GROUPS
+  # =========================================================================
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow public HTTP/HTTPS access to Application Load Balancer'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow traffic from ALB to ECS Fargate backend'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow PostgreSQL access strictly from ECS tasks'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+
+  RabbitMqSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow RabbitMQ AMQP access strictly from ECS tasks'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5671
+          ToPort: 5671
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 5672
+          ToPort: 5672
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+
+  # =========================================================================
+  # 6. DATABASE: AMAZON RDS (POSTGRESQL)
+  # =========================================================================
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'Subnets for StreamForge PostgreSQL RDS'
+      SubnetIds: !Ref SubnetIds
+
+  PostgresDatabase:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: 'streamforge-db'
+      Engine: postgres
+      EngineVersion: '16.9'
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: '20'
+      StorageType: gp3
+      DBName: streamforge
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: !Ref DbPassword
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 1
+      DeleteAutomatedBackups: true
+      DeletionProtection: false
+      SkipFinalSnapshot: true
+
+  # =========================================================================
+  # 7. MESSAGE QUEUE: AMAZON MQ (RABBITMQ)
+  # =========================================================================
+  RabbitMqBroker:
+    Type: AWS::AmazonMQ::Broker
+    Properties:
+      BrokerName: 'streamforge-rabbitmq'
+      EngineType: RABBITMQ
+      EngineVersion: '3.13'
+      HostInstanceType: 'mq.m7g.medium'
+      DeploymentMode: SINGLE_INSTANCE
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: true
+      SubnetIds:
+        - !Ref MqSubnetId
+      SecurityGroups:
+        - !Ref RabbitMqSecurityGroup
+      Users:
+        - Username: !Ref RabbitMqUsername
+          Password: !Ref RabbitMqPassword
+
+  # =========================================================================
+  # 8. LOAD BALANCING: APPLICATION LOAD BALANCER
+  # =========================================================================
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: 'streamforge-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: 'streamforge-tg'
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: '/'
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200,302,401,404'
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+  # =========================================================================
+  # 9. CDN: AMAZON CLOUDFRONT
+  # =========================================================================
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: 'streamforge-s3-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: 'StreamForge HLS Video CDN'
+        DefaultCacheBehavior:
+          TargetOriginId: 'StreamForgeProcessedS3'
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Headers:
+              - Origin
+              - Access-Control-Request-Headers
+              - Access-Control-Request-Method
+            Cookies:
+              Forward: none
+        Origins:
+          - Id: 'StreamForgeProcessedS3'
+            DomainName: !GetAtt ProcessedVideoBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+            S3OriginConfig: {}
+
+  ProcessedBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProcessedVideoBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowCloudFrontServicePrincipal'
+            Effect: Allow
+            Principal:
+              Service: 'cloudfront.amazonaws.com'
+            Action: 's3:GetObject'
+            Resource: !Sub '${ProcessedVideoBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # =========================================================================
+  # 10. IAM ROLES FOR ECS FARGATE
+  # =========================================================================
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'StreamForgeEcsTaskExecutionRole-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+      Policies:
+        - PolicyName: 'SecretsManagerAccess'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                Resource: !Ref AppSecrets
+
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'StreamForgeEcsTaskRole-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'S3Access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:ListBucket'
+                  - 's3:DeleteObject'
+                Resource:
+                  - !GetAtt RawVideoBucket.Arn
+                  - !Sub '${RawVideoBucket.Arn}/*'
+                  - !GetAtt ProcessedVideoBucket.Arn
+                  - !Sub '${ProcessedVideoBucket.Arn}/*'
+
+  # =========================================================================
+  # 11. ECS CLUSTER & TASK DEFINITIONS
+  # =========================================================================
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: 'streamforge-cluster'
+
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: 'streamforge-backend'
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: 'streamforge-backend'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/streamforge-app:latest'
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref BackendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: 'backend'
+          Environment:
+            - Name: DB_HOST
+              Value: !GetAtt PostgresDatabase.Endpoint.Address
+            - Name: DB_PORT
+              Value: !GetAtt PostgresDatabase.Endpoint.Port
+            - Name: DB_NAME
+              Value: 'streamforge'
+            - Name: DB_USERNAME
+              Value: !Ref DbUsername
+            - Name: DB_PASSWORD
+              Value: !Ref DbPassword
+            - Name: STORAGE_ENDPOINT
+              Value: !Sub 'https://s3.${AWS::Region}.amazonaws.com'
+            - Name: STORAGE_ORIGINAL_BUCKET
+              Value: !Ref RawVideoBucket
+            - Name: STORAGE_PROCESSED_BUCKET
+              Value: !Ref ProcessedVideoBucket
+            - Name: STORAGE_REGION
+              Value: !Ref AWS::Region
+            - Name: CLOUDFRONT_URL
+              Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+            - Name: RABBITMQ_USERNAME
+              Value: !Ref RabbitMqUsername
+            - Name: RABBITMQ_PASSWORD
+              Value: !Ref RabbitMqPassword
+            - Name: RABBITMQ_SSL_ENABLED
+              Value: 'true'
+
+  WorkerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: 'streamforge-worker'
+      Cpu: '1024'
+      Memory: '2048'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: 'streamforge-worker'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/streamforge-app:latest'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WorkerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: 'worker'
+          Environment:
+            - Name: DB_HOST
+              Value: !GetAtt PostgresDatabase.Endpoint.Address
+            - Name: DB_PORT
+              Value: !GetAtt PostgresDatabase.Endpoint.Port
+            - Name: DB_NAME
+              Value: 'streamforge'
+            - Name: DB_USERNAME
+              Value: !Ref DbUsername
+            - Name: DB_PASSWORD
+              Value: !Ref DbPassword
+            - Name: STORAGE_ENDPOINT
+              Value: !Sub 'https://s3.${AWS::Region}.amazonaws.com'
+            - Name: STORAGE_ORIGINAL_BUCKET
+              Value: !Ref RawVideoBucket
+            - Name: STORAGE_PROCESSED_BUCKET
+              Value: !Ref ProcessedVideoBucket
+            - Name: STORAGE_REGION
+              Value: !Ref AWS::Region
+            - Name: CLOUDFRONT_URL
+              Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+            - Name: RABBITMQ_USERNAME
+              Value: !Ref RabbitMqUsername
+            - Name: RABBITMQ_PASSWORD
+              Value: !Ref RabbitMqPassword
+            - Name: RABBITMQ_SSL_ENABLED
+              Value: 'true'
+
+Outputs:
+  RawVideoBucketName:
+    Description: 'Raw S3 Upload Bucket'
+    Value: !Ref RawVideoBucket
+    Export:
+      Name: StreamForgeRawBucket
+
+  ProcessedVideoBucketName:
+    Description: 'Processed S3 HLS Streaming Bucket'
+    Value: !Ref ProcessedVideoBucket
+    Export:
+      Name: StreamForgeProcessedBucket
+
+  EcrRepositoryUri:
+    Description: 'Amazon ECR Repository URI'
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: StreamForgeEcrUri
+
+  RdsEndpoint:
+    Description: 'PostgreSQL RDS Database Host'
+    Value: !GetAtt PostgresDatabase.Endpoint.Address
+
+  RdsPort:
+    Description: 'PostgreSQL RDS Database Port'
+    Value: !GetAtt PostgresDatabase.Endpoint.Port
+
+  RabbitMqBrokerId:
+    Description: 'Amazon MQ Broker ID'
+    Value: !Ref RabbitMqBroker
+
+  LoadBalancerDns:
+    Description: 'Application Load Balancer URL'
+    Value: !Sub 'http://${AppLoadBalancer.DNSName}'
+
+  CloudFrontDomain:
+    Description: 'CloudFront CDN Streaming URL'
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+
+  SecretsManagerArn:
+    Description: 'Secrets Manager Secret ARN'
+    Value: !Ref AppSecrets
